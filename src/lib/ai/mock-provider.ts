@@ -309,6 +309,44 @@ export class MockAIProvider implements AIProvider {
       );
     }
 
+    // 1.5. MEDICAL DIAGNOSIS / PRESCRIPTION GUARDRAIL (MANDATORY REGULATORY BOUNDARY)
+    const isMedicalPrescriptionRequest =
+      lower.includes('prescribe') ||
+      lower.includes('prescription') ||
+      lower.includes('medication') ||
+      lower.includes('medicine') ||
+      lower.includes('antibiotic') ||
+      lower.includes('amoxicillin') ||
+      lower.includes('ibuprofen') ||
+      lower.includes('painkiller') ||
+      lower.includes('paracetamol') ||
+      lower.includes('diagnos') ||
+      lower.includes('what disease') ||
+      lower.includes('what condition');
+
+    if (isMedicalPrescriptionRequest) {
+      const actionData = {
+        actions: [
+          {
+            type: 'escalate',
+            payload: {
+              urgency: 'normal',
+              reason: 'Patient requested prescription or clinical medical diagnosis',
+            },
+          },
+        ],
+        shouldEscalate: false,
+        suggestedQuickReplies: ['Book Doctor Consultation', 'Speak with Dentist', 'Clinic Hours'],
+      };
+
+      return (
+        `As an AI receptionist, I am strictly prohibited from prescribing medication, recommending specific antibiotics, or diagnosing medical conditions.\n\n` +
+        `Prescription medications (such as antibiotics or pain relievers) must be prescribed by a qualified, licensed dental doctor only after an in-person clinical examination and review of your medical history.\n\n` +
+        `To relieve your discomfort safely, would you like me to book an urgent consultation slot with our dentist today?` +
+        `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+      );
+    }
+
     // 2. CHECK FOR HUMAN HANDOFF REQUEST
     if (
       lower.includes('talk to human') ||
@@ -341,18 +379,52 @@ export class MockAIProvider implements AIProvider {
     const extractedDate = extractDatePreference(userMessage);
     const extractedTime = extractTimePreference(userMessage);
 
-    // 3. APPOINTMENT BOOKING FLOW
+    // Check if message is primarily asking about location, address, or operating hours
+    const isHoursOrLocationInquiry =
+      lower.includes('timing') ||
+      lower.includes('hours') ||
+      lower.includes('open on') ||
+      lower.includes('where are you') ||
+      lower.includes('where is the clinic') ||
+      lower.includes('location') ||
+      lower.includes('address') ||
+      lower.includes('kahan');
+
+    // 3. TIMINGS & LOCATION INQUIRIES (check before booking if explicitly asking about hours/address)
+    if (isHoursOrLocationInquiry && !lower.includes('book') && !lower.includes('appointment')) {
+      const hoursText =
+        typeof clinic.businessHours === 'string'
+          ? clinic.businessHours
+          : Object.entries(clinic.businessHours || {})
+              .map(([d, h]) => `• **${d}:** ${h}`)
+              .join('\n');
+
+      const actionData = {
+        actions: [{ type: 'collect_info', payload: { intent: 'hours_and_location' } }],
+        shouldEscalate: false,
+        suggestedQuickReplies: ['Book an Appointment', 'Doctor Specializations', 'Call Clinic Front Desk'],
+      };
+
+      return (
+        `Here are the clinic details for **${clinic.name}**:\n\n` +
+        `📍 **Address:** ${clinic.address}${clinic.landmark ? ` (${clinic.landmark})` : ''}${clinic.city ? `, ${clinic.city}` : ''}\n` +
+        `📞 **Phone:** ${clinic.phone}\n\n` +
+        `🕒 **Operating Hours:**\n${hoursText}\n\n` +
+        `We have ample parking and are conveniently situated near public transit. Would you like to schedule a visit today or tomorrow?` +
+        `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+      );
+    }
+
+    // 4. APPOINTMENT BOOKING FLOW
     const isBookingIntent =
       lower.includes('book') ||
       lower.includes('appointment') ||
       lower.includes('slot') ||
       lower.includes('consultation') ||
-      lower.includes('dr.') ||
       lower.includes('milna') ||
-      lower.includes('time') ||
-      lower.includes('visit');
+      (extractedName && extractedPhone && (extractedDate || extractedTime));
 
-    if (isBookingIntent || extractedDate || extractedTime || (extractedName && extractedPhone)) {
+    if (isBookingIntent || (extractedName && extractedPhone)) {
       // Check if we have complete information to book
       if (extractedName && extractedPhone && (extractedDate || extractedTime)) {
         const actionData = {
