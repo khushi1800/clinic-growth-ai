@@ -197,9 +197,36 @@ export async function handleMessage(input: {
   const { cleanedText, actionData } = parseActionData(rawContent);
 
   // 5. Secondary Safety & Lead Extraction Layer (Heuristics safety net)
-  const allText = `${fullMessages.map((m) => m.content).join(' ')} ${userMessage}`;
-  const detectedPhone = actionData?.leadData?.phone || extractPhone(userMessage) || extractPhone(allText);
-  const detectedName = actionData?.leadData?.name || extractName(userMessage) || extractName(allText);
+  // Only inspect user messages for patient identity to prevent assistant greetings ("I am Maya") from being extracted as customer name
+  const userMessagesText = fullMessages
+    .filter((m) => m.role === 'user')
+    .map((m) => m.content)
+    .join(' ');
+  const allUserText = `${userMessagesText} ${userMessage}`.trim();
+
+  const isInvalidPatientName = (name?: string | null): boolean => {
+    if (!name) return true;
+    const lower = name.trim().toLowerCase();
+    return (
+      lower === 'maya' ||
+      lower.includes('maya') ||
+      lower === 'ai' ||
+      lower === 'bot' ||
+      lower === 'assistant' ||
+      lower === 'receptionist' ||
+      lower === 'doctor' ||
+      lower === 'dentist' ||
+      lower === 'clinic'
+    );
+  };
+
+  const rawActionName = actionData?.leadData?.name;
+  const validActionName = isInvalidPatientName(rawActionName) ? null : rawActionName;
+
+  const detectedPhone =
+    actionData?.leadData?.phone || extractPhone(userMessage) || extractPhone(allUserText);
+  const detectedName =
+    validActionName || extractName(userMessage) || extractName(allUserText) || null;
   const detectedDate = actionData?.leadData?.preferredDate || extractDatePreference(userMessage);
   const detectedTime = actionData?.leadData?.preferredTime || extractTimePreference(userMessage);
 
@@ -317,16 +344,19 @@ export async function qualifyLead(
   }
 
   // Heuristic fallback
-  const allText = conversation.map((c) => c.content).join(' ');
-  const phone = extractPhone(allText);
-  const date = extractDatePreference(allText);
+  const userText = conversation
+    .filter((c) => c.role === 'user')
+    .map((c) => c.content)
+    .join(' ');
+  const phone = extractPhone(userText);
+  const date = extractDatePreference(userText);
   let score = 30;
   if (phone) score += 35;
   if (date) score += 25;
 
   return {
     score: Math.min(score, 95),
-    urgency: checkEmergencySymptoms(allText).isEmergency ? 'emergency' : 'normal',
+    urgency: checkEmergencySymptoms(userText).isEmergency ? 'emergency' : 'normal',
     intent: date ? 'high_intent_booking' : phone ? 'interested' : 'routine_inquiry',
     notes: 'Heuristic qualification: Contact or appointment preference registered.',
   };

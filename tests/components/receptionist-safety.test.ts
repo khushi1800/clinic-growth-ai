@@ -119,3 +119,46 @@ test('Lead Capture & Appointment Request Extraction', async () => {
     assert.match(result.leadData.phone, /9845012345/)
   }
 })
+
+test('Identity Isolation: AI assistant persona (Maya) must NEVER be extracted as patient name', async () => {
+  const welcomeMessage: ChatMessage = {
+    id: 'welcome',
+    role: 'assistant',
+    content: 'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. How may I assist you today?',
+    timestamp: new Date().toISOString(),
+  }
+
+  // Patient asks a general pricing question without introducing themselves
+  const userMessage = 'How much does a Root Canal Treatment (RCT) cost?'
+  const result = await handleMessage({
+    clinicId: mockClinicContext.clinicId,
+    conversationId: 'conv-test-isolation-1',
+    userMessage,
+    clinicContext: mockClinicContext,
+    conversationHistory: [welcomeMessage],
+  })
+
+  // The patient name must NOT be "Maya"
+  assert.notEqual(result.leadData?.name?.toLowerCase(), 'maya', 'Patient name must not be falsely set to Maya')
+  assert.equal(result.leadData?.name, undefined, 'Patient name should be undefined when user has not introduced themselves')
+})
+
+test('Identity Extraction: Correctly captures patient full name when explicitly provided', async () => {
+  const welcomeMessage: ChatMessage = {
+    id: 'welcome',
+    role: 'assistant',
+    content: 'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. How may I assist you today?',
+    timestamp: new Date().toISOString(),
+  }
+
+  const userMessage = 'My name is Vikramaditya Singh. Are you open this Saturday?'
+  const result = await handleMessage({
+    clinicId: mockClinicContext.clinicId,
+    conversationId: 'conv-test-isolation-2',
+    userMessage,
+    clinicContext: mockClinicContext,
+    conversationHistory: [welcomeMessage],
+  })
+
+  assert.equal(result.leadData?.name, 'Vikramaditya Singh', 'Should extract patient full name')
+})

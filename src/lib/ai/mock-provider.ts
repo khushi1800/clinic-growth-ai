@@ -135,22 +135,69 @@ export function extractPhone(text: string): string | null {
   return null;
 }
 
+const RESERVED_WORDS = new Set([
+  'maya',
+  'ai',
+  'bot',
+  'assistant',
+  'receptionist',
+  'doctor',
+  'dr',
+  'dentist',
+  'dental',
+  'clinic',
+  'looking',
+  'trying',
+  'having',
+  'planning',
+  'suffering',
+  'interested',
+  'wondering',
+  'asking',
+  'calling',
+  'seeking',
+  'here',
+  'new',
+  'currently',
+  'just',
+  'very',
+  'feeling',
+  'experiencing',
+  'getting',
+  'going',
+  'unable',
+  'patient',
+  'inquiry',
+  'question',
+  'consultation',
+  'appointment',
+  'available',
+  'visiting',
+  'checking',
+  'today',
+  'tomorrow',
+  'morning',
+  'evening',
+]);
+
 /**
  * Extracts common Indian patient names from introduction patterns.
+ * Explicitly guards against mistaking the AI receptionist (Maya) or common words as patient names.
  */
 export function extractName(text: string): string | null {
   const patterns = [
-    /(?:my name is|i am|this is|naam hai|mera naam)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:my name is|naam hai|mera naam)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
     /(?:call me|patient is|patient name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:i am|this is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
   ];
 
   for (const p of patterns) {
     const match = text.match(p);
     if (match && match[1]) {
       const candidate = match[1].trim();
-      // Filter out words that might get falsely matched
-      const lower = candidate.toLowerCase();
-      if (!['looking', 'trying', 'having', 'planning', 'suffering', 'dental', 'doctor'].includes(lower)) {
+      const firstWord = candidate.split(/\s+/)[0].toLowerCase();
+      const fullLower = candidate.toLowerCase();
+      if (!RESERVED_WORDS.has(firstWord) && !RESERVED_WORDS.has(fullLower) && !fullLower.includes('maya')) {
         return candidate;
       }
     }
@@ -231,16 +278,20 @@ export class MockAIProvider implements AIProvider {
     await this.delay(delayMs);
 
     const lastMessage = messages[messages.length - 1]?.content || '';
-    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+    // Only pass user messages to history for patient entity extraction so assistant greetings like "I am Maya" are never extracted as the patient name
+    const userHistory = messages
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+      .join('\n');
 
-    const result = this.processMockLogic(lastMessage, conversationText);
+    const result = this.processMockLogic(lastMessage, userHistory);
 
     return {
       content: result,
       usage: {
-        promptTokens: Math.floor(conversationText.length / 4) + 100,
+        promptTokens: Math.floor(userHistory.length / 4) + 100,
         completionTokens: Math.floor(result.length / 4),
-        totalTokens: Math.floor((conversationText.length + result.length) / 4) + 100,
+        totalTokens: Math.floor((userHistory.length + result.length) / 4) + 100,
       },
       finishReason: 'stop',
     };
@@ -375,7 +426,8 @@ export class MockAIProvider implements AIProvider {
 
     // Extract any existing patient info
     const extractedPhone = extractPhone(userMessage) || extractPhone(history);
-    const extractedName = extractName(userMessage) || extractName(history);
+    const rawExtractedName = extractName(userMessage) || extractName(history);
+    const extractedName = rawExtractedName && rawExtractedName.toLowerCase() !== 'maya' ? rawExtractedName : null;
     const extractedDate = extractDatePreference(userMessage);
     const extractedTime = extractTimePreference(userMessage);
 
@@ -461,10 +513,11 @@ export class MockAIProvider implements AIProvider {
           suggestedQuickReplies: ['Confirm Slot', 'Reschedule Time', 'Add Tooth Pain Notes'],
         };
 
+        const patientDisplayName = extractedName || 'Valued Patient';
         return (
-          `Thank you so much, **${extractedName}**! 🎉\n\n` +
+          `Thank you so much${extractedName ? `, **${extractedName}**` : ''}! 🎉\n\n` +
           `I have captured your appointment request:\n` +
-          `• **Patient:** ${extractedName}\n` +
+          `• **Patient:** ${patientDisplayName}\n` +
           `• **Contact Number:** ${extractedPhone}\n` +
           `• **Preferred Date:** ${extractedDate || 'Earliest slot available'}\n` +
           `• **Preferred Time:** ${extractedTime || '11:00 AM'}\n` +

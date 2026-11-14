@@ -180,6 +180,7 @@ export const AIPlaygroundPage: React.FC = () => {
   const quickPrompts = [
     'How much does a Root Canal Treatment (RCT) cost?',
     'Are you open this Sunday morning?',
+    'Hi, my name is Rahul Sharma, phone 9845012345. Need consultation tomorrow',
     'I have unbearable tooth pain on my lower left jaw',
     'I have facial swelling, high fever, and cannot open my jaw',
     'Book an appointment with Dr. Rohan tomorrow at 11 AM',
@@ -371,7 +372,7 @@ export const AIPlaygroundPage: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div>
-                        <span className="text-slate-400">Name:</span>{' '}
+                        <span className="text-slate-400">Patient Name:</span>{' '}
                         <span className="font-semibold text-slate-800">
                           {lastResult.leadData?.name || 'Not detected'}
                         </span>

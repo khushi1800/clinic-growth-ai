@@ -152,7 +152,7 @@ At the end of your response, whenever new patient details, appointment requests,
 <action_data>
 {
   "leadData": {
-    "name": "Extracted name or null",
+    "name": "Extracted full name of the human patient (never 'Maya' or the AI assistant; null if unstated)",
     "phone": "Extracted 10-digit phone or null",
     "email": "Extracted email or null",
     "concern": "Primary dental complaint or null",
