@@ -9,18 +9,37 @@ import {
   CheckCircle,
   MapPin,
   Stethoscope,
+  Phone,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useMockData } from '@/hooks/useMockData';
 
 export const AppointmentsPage: React.FC = () => {
-  const { appointments } = useMockData();
+  const { appointments, addAppointment, staff, branches } = useMockData();
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [doctorFilter, setDoctorFilter] = useState('ALL');
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const [bookingForm, setBookingForm] = useState({
+    patient_name: '',
+    patient_phone: '',
+    doctor_name: 'Dr. Rohan Sharma, MDS',
+    treatment: 'Root Canal Treatment (RCT)',
+    branch_name: 'Indiranagar Main Clinic',
+    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_time: '11:00:00',
+    duration_minutes: 30,
+    notes: '',
+  });
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesStatus = statusFilter === 'ALL' || apt.status === statusFilter;
@@ -46,6 +65,40 @@ export const AppointmentsPage: React.FC = () => {
     );
   };
 
+  const handleCreateAppointment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingForm.patient_name.trim() || !bookingForm.patient_phone.trim()) return;
+
+    addAppointment({
+      patient_name: bookingForm.patient_name,
+      patient_phone: bookingForm.patient_phone,
+      doctor_name: bookingForm.doctor_name,
+      treatment: bookingForm.treatment,
+      branch_name: bookingForm.branch_name,
+      appointment_date: bookingForm.appointment_date,
+      appointment_time: bookingForm.appointment_time,
+      duration_minutes: Number(bookingForm.duration_minutes) || 30,
+      status: 'confirmed',
+      notes: bookingForm.notes,
+    });
+
+    setIsBookModalOpen(false);
+    setBookingSuccess(true);
+    setTimeout(() => setBookingSuccess(false), 3000);
+
+    setBookingForm({
+      patient_name: '',
+      patient_phone: '',
+      doctor_name: 'Dr. Rohan Sharma, MDS',
+      treatment: 'Root Canal Treatment (RCT)',
+      branch_name: 'Indiranagar Main Clinic',
+      appointment_date: new Date().toISOString().split('T')[0],
+      appointment_time: '11:00:00',
+      duration_minutes: 30,
+      notes: '',
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -60,11 +113,22 @@ export const AppointmentsPage: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/leads">
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Book New Chair
+        <div className="flex items-center gap-3">
+          {bookingSuccess && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Appointment booked & confirmed!</span>
+            </div>
+          )}
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsBookModalOpen(true)}
+          >
+            Book New Appointment
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -98,15 +162,15 @@ export const AppointmentsPage: React.FC = () => {
                 className="w-full py-2 px-3 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="ALL">All Doctors & Specialists</option>
-                <option value="Rohan">Dr. Rohan Sharma, MDS</option>
-                <option value="Pooja">Dr. Pooja Iyer, BDS</option>
+                <option value="Dr. Rohan">Dr. Rohan Sharma (Endodontics)</option>
+                <option value="Dr. Pooja">Dr. Pooja Iyer (Cosmetic)</option>
               </select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* List */}
+      {/* Appointments Table */}
       {filteredAppointments.length === 0 ? (
         <EmptyState
           icon={<CalendarIcon className="w-8 h-8 text-blue-500" />}
@@ -169,6 +233,126 @@ export const AppointmentsPage: React.FC = () => {
           </TableBody>
         </Table>
       )}
+
+      {/* Book New Appointment Modal */}
+      <Modal
+        isOpen={isBookModalOpen}
+        onClose={() => setIsBookModalOpen(false)}
+        title="Schedule Patient Appointment"
+      >
+        <form onSubmit={handleCreateAppointment} className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Book a chair directly for a patient consultation or procedure. Confirms immediately in the system.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Patient Name *"
+              placeholder="e.g. Meera Krishnan"
+              leftIcon={<User className="w-4 h-4" />}
+              value={bookingForm.patient_name}
+              onChange={e => setBookingForm({ ...bookingForm, patient_name: e.target.value })}
+              required
+            />
+            <Input
+              label="Mobile Number *"
+              placeholder="e.g. 9845012345"
+              leftIcon={<Phone className="w-4 h-4" />}
+              value={bookingForm.patient_phone}
+              onChange={e => setBookingForm({ ...bookingForm, patient_phone: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="Select Doctor"
+              value={bookingForm.doctor_name}
+              onChange={e => setBookingForm({ ...bookingForm, doctor_name: e.target.value })}
+              options={[
+                { label: 'Dr. Rohan Sharma, MDS (Endodontist)', value: 'Dr. Rohan Sharma, MDS' },
+                { label: 'Dr. Pooja Iyer, BDS (Cosmetic)', value: 'Dr. Pooja Iyer, BDS' },
+              ]}
+            />
+            <Select
+              label="Clinic Branch"
+              value={bookingForm.branch_name}
+              onChange={e => setBookingForm({ ...bookingForm, branch_name: e.target.value })}
+              options={[
+                { label: 'Indiranagar Main Clinic', value: 'Indiranagar Main Clinic' },
+                { label: 'Koramangala Center', value: 'Koramangala Center' },
+              ]}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input
+              label="Appointment Date *"
+              type="date"
+              value={bookingForm.appointment_date}
+              onChange={e => setBookingForm({ ...bookingForm, appointment_date: e.target.value })}
+              required
+            />
+            <Input
+              label="Appointment Time *"
+              type="time"
+              value={bookingForm.appointment_time}
+              onChange={e => setBookingForm({ ...bookingForm, appointment_time: e.target.value })}
+              required
+            />
+            <Select
+              label="Duration"
+              value={String(bookingForm.duration_minutes)}
+              onChange={e => setBookingForm({ ...bookingForm, duration_minutes: Number(e.target.value) })}
+              options={[
+                { label: '30 Minutes', value: '30' },
+                { label: '45 Minutes', value: '45' },
+                { label: '60 Minutes', value: '60' },
+              ]}
+            />
+          </div>
+
+          <Select
+            label="Treatment / Clinical Procedure"
+            value={bookingForm.treatment}
+            onChange={e => setBookingForm({ ...bookingForm, treatment: e.target.value })}
+            options={[
+              { label: 'Root Canal Treatment (RCT)', value: 'Root Canal Treatment (RCT)' },
+              { label: 'Dental Implants Consultation', value: 'Dental Implants Consultation' },
+              { label: 'Teeth Whitening & Scaling', value: 'Teeth Whitening & Scaling' },
+              { label: 'Clear Aligners / Braces Assessment', value: 'Clear Aligners / Braces Assessment' },
+              { label: 'Tooth Extraction / Surgery', value: 'Tooth Extraction / Surgery' },
+              { label: 'General Consultation & Digital X-Ray', value: 'General Consultation & Digital X-Ray' },
+            ]}
+          />
+
+          <Input
+            label="Clinical Notes / Pre-visit Instructions"
+            placeholder="e.g. Sensitivity to hot/cold, wants RVG digital X-ray"
+            value={bookingForm.notes}
+            onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })}
+          />
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => setIsBookModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              leftIcon={<CheckCircle2 className="w-4 h-4" />}
+            >
+              Confirm Appointment Booking
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

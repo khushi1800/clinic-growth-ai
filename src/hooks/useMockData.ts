@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import type {
   Clinic,
   ClinicBranch,
@@ -811,28 +811,105 @@ export const DEMO_FINANCE_RECORDS: FinanceRecord[] = [
   },
 ];
 
-export function useMockData() {
-  const [clinic, setClinic] = useState<Clinic>(DEMO_CLINIC);
-  const [branches, setBranches] = useState<ClinicBranch[]>(DEMO_BRANCHES);
-  const [staff, setStaff] = useState<ClinicStaff[]>(DEMO_STAFF);
-  const [faqs, setFaqs] = useState<ClinicFaq[]>(DEMO_FAQS);
-  const [leads, setLeads] = useState(DEMO_LEADS);
-  const [appointments, setAppointments] = useState(DEMO_APPOINTMENTS);
-  const [conversations, setConversations] = useState(DEMO_CONVERSATIONS);
-  const [followUpRules, setFollowUpRules] = useState(DEMO_FOLLOWUP_RULES);
-  const [prospects, setProspects] = useState<Prospect[]>(DEMO_ADMIN_PROSPECTS);
-  const [customers, setCustomers] = useState(DEMO_ADMIN_CUSTOMERS);
-  const [financeRecords, setFinanceRecords] = useState<FinanceRecord[]>(DEMO_FINANCE_RECORDS);
+interface MockStoreState {
+  clinic: Clinic;
+  branches: ClinicBranch[];
+  staff: ClinicStaff[];
+  faqs: ClinicFaq[];
+  leads: any[];
+  appointments: any[];
+  conversations: any[];
+  followUpRules: FollowUpRule[];
+  prospects: Prospect[];
+  customers: any[];
+  financeRecords: FinanceRecord[];
+}
 
-  // Sync to local state if needed
-  useEffect(() => {
-    // persistent local mock helper
-  }, []);
+const STORAGE_KEY = 'cga_mock_store_v2';
+
+const defaultState: MockStoreState = {
+  clinic: DEMO_CLINIC,
+  branches: DEMO_BRANCHES,
+  staff: DEMO_STAFF,
+  faqs: DEMO_FAQS,
+  leads: DEMO_LEADS,
+  appointments: DEMO_APPOINTMENTS,
+  conversations: DEMO_CONVERSATIONS,
+  followUpRules: DEMO_FOLLOWUP_RULES,
+  prospects: DEMO_ADMIN_PROSPECTS,
+  customers: DEMO_ADMIN_CUSTOMERS,
+  financeRecords: DEMO_FINANCE_RECORDS,
+};
+
+function loadStore(): MockStoreState {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...defaultState,
+          ...parsed,
+          clinic: { ...defaultState.clinic, ...(parsed.clinic || {}) },
+          appointments: Array.isArray(parsed.appointments) && parsed.appointments.length > 0 ? parsed.appointments : defaultState.appointments,
+          leads: Array.isArray(parsed.leads) && parsed.leads.length > 0 ? parsed.leads : defaultState.leads,
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved mock data:', e);
+    }
+  }
+  return defaultState;
+}
+
+let currentStore: MockStoreState = loadStore();
+const listeners = new Set<() => void>();
+
+function updateStore(updater: (prev: MockStoreState) => MockStoreState) {
+  currentStore = updater(currentStore);
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStore));
+    } catch (e) {
+      console.warn('Failed to persist mock data:', e);
+    }
+  }
+  listeners.forEach(fn => fn());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): MockStoreState {
+  return currentStore;
+}
+
+export function useMockData() {
+  const store = useSyncExternalStore(subscribe, getSnapshot, () => defaultState);
+
+  const setClinic = (clinic: Clinic) => {
+    updateStore(prev => ({ ...prev, clinic }));
+  };
+
+  const updateBusinessHours = (businessHours: any) => {
+    updateStore(prev => ({
+      ...prev,
+      clinic: {
+        ...prev.clinic,
+        business_hours: businessHours,
+        updated_at: new Date().toISOString(),
+      },
+    }));
+  };
 
   const addLead = (lead: Partial<Lead>) => {
     const newLead: any = {
       id: `lead-${Date.now()}`,
-      clinic_id: DEMO_CLINIC.id,
+      clinic_id: store.clinic.id,
       name: lead.name || 'Anonymous Patient',
       phone: lead.phone || null,
       email: lead.email || null,
@@ -845,20 +922,26 @@ export function useMockData() {
       last_activity: 'Lead captured via form',
       treatment_interest: lead.notes || 'General Consultation',
     };
-    setLeads(prev => [newLead, ...prev]);
+    updateStore(prev => ({
+      ...prev,
+      leads: [newLead, ...prev.leads],
+    }));
     return newLead;
   };
 
   const updateLeadStatus = (leadId: string, status: any) => {
-    setLeads(prev =>
-      prev.map(l => (l.id === leadId ? { ...l, status, updated_at: new Date().toISOString() } : l))
-    );
+    updateStore(prev => ({
+      ...prev,
+      leads: prev.leads.map(l =>
+        l.id === leadId ? { ...l, status, updated_at: new Date().toISOString() } : l
+      ),
+    }));
   };
 
   const addAppointment = (apt: Partial<any>) => {
     const newApt = {
       id: `apt-${Date.now()}`,
-      clinic_id: DEMO_CLINIC.id,
+      clinic_id: store.clinic.id,
       lead_id: apt.lead_id || null,
       branch_id: apt.branch_id || 'branch-01',
       doctor_id: apt.doctor_id || 'staff-01',
@@ -875,40 +958,52 @@ export function useMockData() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    setAppointments(prev => [newApt, ...prev]);
+    updateStore(prev => ({
+      ...prev,
+      appointments: [newApt, ...prev.appointments],
+    }));
     return newApt;
   };
 
   const updateAppointmentStatus = (aptId: string, status: any) => {
-    setAppointments(prev =>
-      prev.map(a => (a.id === aptId ? { ...a, status, updated_at: new Date().toISOString() } : a))
-    );
+    updateStore(prev => ({
+      ...prev,
+      appointments: prev.appointments.map(a =>
+        a.id === aptId ? { ...a, status, updated_at: new Date().toISOString() } : a
+      ),
+    }));
   };
 
   const addFaq = (faq: Omit<ClinicFaq, 'id' | 'clinic_id' | 'created_at' | 'updated_at'>) => {
     const newFaq: ClinicFaq = {
       id: `faq-${Date.now()}`,
-      clinic_id: DEMO_CLINIC.id,
+      clinic_id: store.clinic.id,
       question: faq.question,
       answer: faq.answer,
       category: faq.category || 'General',
-      sort_order: faqs.length + 1,
+      sort_order: store.faqs.length + 1,
       is_active: faq.is_active ?? true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    setFaqs(prev => [...prev, newFaq]);
+    updateStore(prev => ({
+      ...prev,
+      faqs: [...prev.faqs, newFaq],
+    }));
     return newFaq;
   };
 
   const deleteFaq = (id: string) => {
-    setFaqs(prev => prev.filter(f => f.id !== id));
+    updateStore(prev => ({
+      ...prev,
+      faqs: prev.faqs.filter(f => f.id !== id),
+    }));
   };
 
   const addStaff = (member: Partial<ClinicStaff>) => {
     const newStaff: ClinicStaff = {
       id: `staff-${Date.now()}`,
-      clinic_id: DEMO_CLINIC.id,
+      clinic_id: store.clinic.id,
       user_id: null,
       role: member.role || 'receptionist',
       name: member.name || 'New Staff',
@@ -918,7 +1013,10 @@ export function useMockData() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    setStaff(prev => [...prev, newStaff]);
+    updateStore(prev => ({
+      ...prev,
+      staff: [...prev.staff, newStaff],
+    }));
     return newStaff;
   };
 
@@ -928,30 +1026,44 @@ export function useMockData() {
       id: `fin-${Date.now()}`,
       created_at: new Date().toISOString(),
     };
-    setFinanceRecords(prev => [newRecord, ...prev]);
+    updateStore(prev => ({
+      ...prev,
+      financeRecords: [newRecord, ...prev.financeRecords],
+    }));
     return newRecord;
   };
 
+  const resetToDefault = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+    }
+    updateStore(() => defaultState);
+  };
+
   return {
-    clinic,
+    clinic: store.clinic,
     setClinic,
-    branches,
-    staff,
+    updateBusinessHours,
+    branches: store.branches,
+    staff: store.staff,
     addStaff,
-    faqs,
+    faqs: store.faqs,
     addFaq,
     deleteFaq,
-    leads,
+    leads: store.leads,
     addLead,
     updateLeadStatus,
-    appointments,
+    appointments: store.appointments,
     addAppointment,
     updateAppointmentStatus,
-    conversations,
-    followUpRules,
-    prospects,
-    customers,
-    financeRecords,
+    conversations: store.conversations,
+    followUpRules: store.followUpRules,
+    prospects: store.prospects,
+    customers: store.customers,
+    financeRecords: store.financeRecords,
     addFinanceRecord,
+    resetToDefault,
   };
 }

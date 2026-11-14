@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useMockData } from '@/hooks/useMockData';
+import type { Message } from '@/types/database';
 
 export const ConversationsPage: React.FC = () => {
   const { conversations } = useMockData();
@@ -135,7 +136,7 @@ export const ConversationsPage: React.FC = () => {
 
           {/* Messages Stream */}
           <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/30">
-            {selectedConv.messages.map(msg => {
+            {selectedConv.messages.map((msg: Message) => {
               const isAssistant = msg.role === 'assistant';
               return (
                 <div

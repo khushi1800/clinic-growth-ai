@@ -31,7 +31,7 @@ export const LeadDetailPage: React.FC = () => {
 
   const [currentStatus, setCurrentStatus] = useState(lead.status);
   const [assignedStaff, setAssignedStaff] = useState(lead.assigned_to || 'staff-01');
-  const [notes, setNotes] = useState(lead.notes || '');
+  const [notes, setNotes] = useState<string>(lead.notes || '');
   const [newNote, setNewNote] = useState('');
   const [isAptModalOpen, setIsAptModalOpen] = useState(false);
 
@@ -51,7 +51,7 @@ export const LeadDetailPage: React.FC = () => {
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNote.trim()) return;
-    setNotes(prev => `${prev ? prev + '\n\n' : ''}[${new Date().toLocaleDateString('en-IN')}] ${newNote}`);
+    setNotes((prev: string) => `${prev ? prev + '\n\n' : ''}[${new Date().toLocaleDateString('en-IN')}] ${newNote}`);
     setNewNote('');
   };
 
