@@ -45,6 +45,10 @@ This document transparently catalogs current technical constraints, intentional 
 - **Limitation:** It does not bi-directionally sync with external doctor personal calendars (e.g., Google Calendar, Apple Calendar, Practo Ray).
 - **Rule:** As mandated by Section 5 (Module D), real appointments must be reviewed or confirmed by clinic staff before treating slots as locked against external clinic walk-ins.
 
+### 3.5 Demo Booking Form Phone Sanitization & Button Propagation (Resolved)
+- **Resolved Issue:** The demo booking form on `/demo` previously had an over-aggressive regex character class `[\s\-\+91]` that inadvertently stripped literal digits `9` and `1` from Indian phone numbers. Additionally, `<Button>` components lacked an explicit `type="button"`, causing secondary clicks to submit forms unexpectedly.
+- **Resolution:** Replaced phone validation with strict prefix-aware sanitization (`/^[6-9]\d{9}$/`), defaulted all `Button` primitives to `type="button"`, added real-time error clearing on keystroke, and established direct route aliases for `/dashboard/ai-playground` and `/dashboard/conversations`.
+
 ---
 
 ## 4. Workarounds in Place
