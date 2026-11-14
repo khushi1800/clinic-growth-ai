@@ -75,6 +75,13 @@ export const router = createBrowserRouter([
       { path: 'settings/staff', element: <StaffPage /> },
       { path: 'settings/faq', element: <FAQPage /> },
       { path: 'settings/follow-ups', element: <FollowUpRulesPage /> },
+      // Direct Aliases for intuitive URL navigation
+      { path: 'dashboard/ai-playground', element: <AIPlaygroundPage /> },
+      { path: 'dashboard/conversations', element: <ConversationsPage /> },
+      { path: 'dashboard/leads', element: <Navigate to="/leads" replace /> },
+      { path: 'dashboard/appointments', element: <Navigate to="/appointments" replace /> },
+      { path: 'settings/faqs', element: <Navigate to="/settings/faq" replace /> },
+      { path: 'settings/followups', element: <Navigate to="/settings/follow-ups" replace /> },
     ],
   },
 
