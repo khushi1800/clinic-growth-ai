@@ -47,15 +47,18 @@ export const MarketingLayout: React.FC = () => {
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Clinic Sign In
-              </Button>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center font-medium rounded-lg text-xs px-3.5 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            >
+              Clinic Sign In
             </Link>
-            <Link to="/demo">
-              <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Book 15-Min Demo
-              </Button>
+            <Link
+              to="/demo"
+              className="inline-flex items-center justify-center font-medium rounded-lg text-xs px-3.5 py-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors gap-1.5"
+            >
+              <span>Book 15-Min Demo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -84,15 +87,19 @@ export const MarketingLayout: React.FC = () => {
               </Link>
             ))}
             <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Clinic Sign In
-                </Button>
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-colors"
+              >
+                Clinic Sign In
               </Link>
-              <Link to="/demo" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="primary" className="w-full">
-                  Book 15-Min Demo
-                </Button>
+              <Link
+                to="/demo"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2 px-4 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors"
+              >
+                Book 15-Min Demo
               </Link>
             </div>
           </div>

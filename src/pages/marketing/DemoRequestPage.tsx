@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Calendar,
   CheckCircle2,
   Clock,
   Sparkles,
@@ -10,9 +9,10 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
-  Stethoscope,
-  Laptop,
+  ArrowRight,
+  ExternalLink,
+  MessageSquare,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 export const DemoRequestPage: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     clinicName: '',
     contactPerson: '',
@@ -36,20 +37,47 @@ export const DemoRequestPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Helper to update state and immediately clear that field's error
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.clinicName.trim()) newErrors.clinicName = 'Clinic name is required';
-    if (!formData.contactPerson.trim()) newErrors.contactPerson = 'Contact doctor/person name is required';
+
+    if (!formData.clinicName.trim()) {
+      newErrors.clinicName = 'Clinic name is required';
+    }
+
+    if (!formData.contactPerson.trim()) {
+      newErrors.contactPerson = 'Contact doctor or person name is required';
+    }
+
+    // Sanitize phone: strip non-digits, strip country code +91 or leading 0 if 10 digits follow
+    const cleanPhone = formData.phone
+      .replace(/\D/g, '')
+      .replace(/^91(?=\d{10}$)/, '')
+      .replace(/^0(?=\d{10}$)/, '');
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Mobile number is required';
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone.replace(/[\s\-\+91]/g, ''))) {
-      newErrors.phone = 'Please enter a valid 10-digit Indian mobile number';
+    } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      newErrors.phone = 'Please enter a valid 10-digit Indian mobile number (e.g. 9845012345)';
     }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email address is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address';
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -62,12 +90,43 @@ export const DemoRequestPage: React.FC = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 1000);
+    }, 800);
   };
 
   return (
     <div className="py-12 md:py-20 bg-slate-50 min-h-[calc(100vh-140px)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Instant Access Banner */}
+        <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="p-2 bg-white/20 rounded-lg shrink-0 hidden sm:block">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">Want to test the software right away without waiting?</p>
+              <p className="text-xs text-blue-100">
+                You can try the live WhatsApp AI Receptionist simulator or explore the full clinic dashboard now.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/dashboard/ai-playground"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-blue-700 text-xs font-bold hover:bg-blue-50 transition-colors shadow-xs"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Live AI Simulator</span>
+            </Link>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-800/60 text-white text-xs font-semibold hover:bg-blue-800 transition-colors border border-white/20"
+            >
+              <span>Clinic CRM Demo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Context & Proof */}
           <div className="lg:col-span-5 space-y-6">
@@ -138,7 +197,7 @@ export const DemoRequestPage: React.FC = () => {
                     </div>
                     <Badge variant="success" size="md">DEMO RESERVED</Badge>
                     <h3 className="text-2xl font-bold text-slate-900">
-                      Thank You, Dr. {formData.contactPerson || 'Doctor'}!
+                      Thank You, {formData.contactPerson || 'Doctor'}!
                     </h3>
                     <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
                       We have received your demo request for <strong>{formData.clinicName}</strong>. Our clinical specialist will message you on WhatsApp at <strong>{formData.phone}</strong> within 2 hours to confirm your video call link.
@@ -151,15 +210,23 @@ export const DemoRequestPage: React.FC = () => {
                     </div>
 
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-                      <Link to="/dashboard">
-                        <Button variant="primary" size="md">
-                          Explore Live Demo Dashboard
-                        </Button>
+                      <Link
+                        to="/dashboard"
+                        className="w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-lg px-5 py-2.5 text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
+                      >
+                        Explore Live Demo Dashboard
                       </Link>
-                      <Link to="/">
-                        <Button variant="outline" size="md">
-                          Back to Home
-                        </Button>
+                      <Link
+                        to="/dashboard/ai-playground"
+                        className="w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-lg px-5 py-2.5 text-sm bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors"
+                      >
+                        Test AI Receptionist
+                      </Link>
+                      <Link
+                        to="/"
+                        className="w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-lg px-4 py-2 text-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        Back to Home
                       </Link>
                     </div>
                   </div>
@@ -178,7 +245,7 @@ export const DemoRequestPage: React.FC = () => {
                         placeholder="e.g. Ivory Dental Care"
                         leftIcon={<Building className="w-4 h-4" />}
                         value={formData.clinicName}
-                        onChange={e => setFormData({ ...formData, clinicName: e.target.value })}
+                        onChange={e => updateField('clinicName', e.target.value)}
                         error={errors.clinicName}
                       />
                       <Input
@@ -186,7 +253,7 @@ export const DemoRequestPage: React.FC = () => {
                         placeholder="e.g. Dr. Sneha Reddy"
                         leftIcon={<User className="w-4 h-4" />}
                         value={formData.contactPerson}
-                        onChange={e => setFormData({ ...formData, contactPerson: e.target.value })}
+                        onChange={e => updateField('contactPerson', e.target.value)}
                         error={errors.contactPerson}
                       />
                     </div>
@@ -197,9 +264,9 @@ export const DemoRequestPage: React.FC = () => {
                         placeholder="e.g. 9845012345"
                         leftIcon={<Phone className="w-4 h-4" />}
                         value={formData.phone}
-                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={e => updateField('phone', e.target.value)}
                         error={errors.phone}
-                        helperText="We send the live WhatsApp test to this number"
+                        helperText="Enter 10-digit mobile number with or without +91"
                       />
                       <Input
                         label="Email Address *"
@@ -207,7 +274,7 @@ export const DemoRequestPage: React.FC = () => {
                         type="email"
                         leftIcon={<Mail className="w-4 h-4" />}
                         value={formData.email}
-                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        onChange={e => updateField('email', e.target.value)}
                         error={errors.email}
                       />
                     </div>
@@ -216,7 +283,7 @@ export const DemoRequestPage: React.FC = () => {
                       <Select
                         label="City"
                         value={formData.city}
-                        onChange={e => setFormData({ ...formData, city: e.target.value })}
+                        onChange={e => updateField('city', e.target.value)}
                         options={[
                           { label: 'Bengaluru', value: 'Bengaluru' },
                           { label: 'Mumbai', value: 'Mumbai' },
@@ -232,7 +299,7 @@ export const DemoRequestPage: React.FC = () => {
                       <Select
                         label="Number of Doctors"
                         value={formData.doctorCount}
-                        onChange={e => setFormData({ ...formData, doctorCount: e.target.value })}
+                        onChange={e => updateField('doctorCount', e.target.value)}
                         options={[
                           { label: 'Solo Practice (1)', value: 'Solo' },
                           { label: '2 - 3 Doctors', value: '1-3 Doctors' },
@@ -243,7 +310,7 @@ export const DemoRequestPage: React.FC = () => {
                       <Select
                         label="Current Software"
                         value={formData.currentSoftware}
-                        onChange={e => setFormData({ ...formData, currentSoftware: e.target.value })}
+                        onChange={e => updateField('currentSoftware', e.target.value)}
                         options={[
                           { label: 'Practo', value: 'Practo' },
                           { label: 'Dentee', value: 'Dentee' },
@@ -256,7 +323,7 @@ export const DemoRequestPage: React.FC = () => {
                     <Select
                       label="Preferred Time for 15-min Call"
                       value={formData.preferredTime}
-                      onChange={e => setFormData({ ...formData, preferredTime: e.target.value })}
+                      onChange={e => updateField('preferredTime', e.target.value)}
                       options={[
                         { label: 'Morning (10:00 AM - 01:00 PM)', value: 'Morning (10 AM - 1 PM)' },
                         { label: 'Afternoon (02:00 PM - 05:00 PM)', value: 'Afternoon (2 PM - 5 PM)' },
