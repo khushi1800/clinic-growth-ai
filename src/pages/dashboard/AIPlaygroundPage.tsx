@@ -88,6 +88,24 @@ const PLAYGROUND_CLINIC_CONTEXT: ClinicContext = {
   city: 'Bengaluru',
   phone: '+91 98450 12345',
   emergencyContact: '+91 98450 99999',
+  branches: [
+    {
+      id: 'branch-01',
+      name: 'Indiranagar Main Clinic',
+      address: '#42, 12th Main Road, HAL 2nd Stage, Indiranagar',
+      city: 'Bengaluru',
+      phone: '+91 98450 12345',
+      isMain: true,
+    },
+    {
+      id: 'branch-02',
+      name: 'Koramangala Center',
+      address: '80 Feet Road, 4th Block, Koramangala',
+      city: 'Bengaluru',
+      phone: '+91 98450 12346',
+      isMain: false,
+    },
+  ],
 };
 
 export const AIPlaygroundPage: React.FC = () => {
@@ -96,7 +114,7 @@ export const AIPlaygroundPage: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. How may I assist you with your dental care, appointments, or pricing today?',
+        'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. We have branches in Indiranagar and Koramangala. How may I assist you with your dental care, appointments, or pricing today?',
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -170,7 +188,7 @@ export const AIPlaygroundPage: React.FC = () => {
         id: 'welcome',
         role: 'assistant',
         content:
-          'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. How may I assist you with your dental care, appointments, or pricing today?',
+          'Namaste! I am Maya, the 24/7 AI Receptionist for Smile Dental Clinic. We have branches in Indiranagar and Koramangala. How may I assist you with your dental care, appointments, or pricing today?',
         timestamp: new Date().toISOString(),
       },
     ]);
@@ -179,11 +197,11 @@ export const AIPlaygroundPage: React.FC = () => {
 
   const quickPrompts = [
     'How much does a Root Canal Treatment (RCT) cost?',
+    'Where are your clinics located?',
+    'I want to book an appointment with Dr. Rohan',
+    'Book an appointment at Koramangala branch tomorrow at 11 AM',
+    'Hi, my name is Rahul Sharma, phone 9845012345. Need RCT at Indiranagar',
     'Are you open this Sunday morning?',
-    'Hi, my name is Rahul Sharma, phone 9845012345. Need consultation tomorrow',
-    'I have unbearable tooth pain on my lower left jaw',
-    'I have facial swelling, high fever, and cannot open my jaw',
-    'Book an appointment with Dr. Rohan tomorrow at 11 AM',
   ];
 
   return (
@@ -384,13 +402,19 @@ export const AIPlaygroundPage: React.FC = () => {
                         </span>
                       </div>
                       <div>
+                        <span className="text-slate-400">Branch:</span>{' '}
+                        <span className="font-semibold text-slate-800">
+                          {lastResult.leadData?.preferredBranch || 'Not selected'}
+                        </span>
+                      </div>
+                      <div>
                         <span className="text-slate-400">Treatment:</span>{' '}
                         <span className="font-semibold text-slate-800">
                           {lastResult.leadData?.serviceRequested || lastResult.leadData?.concern || 'General'}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-slate-400">Confidence:</span>{' '}
+                      <div className="col-span-2 flex items-center justify-between pt-1 border-t border-slate-100">
+                        <span className="text-slate-400">Extraction Confidence:</span>{' '}
                         <span className="font-semibold text-emerald-600">
                           {Math.round((lastResult.confidenceScore || 0.95) * 100)}%
                         </span>
@@ -440,7 +464,13 @@ export const AIPlaygroundPage: React.FC = () => {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
             <h4 className="font-bold text-slate-800 text-xs">Simulated Clinic Parameters:</h4>
             <p className="text-slate-600 text-[11px]">
-              • <strong>Clinic:</strong> Smile Dental Clinic (Indiranagar, BLR)
+              • <strong>Clinic:</strong> Smile Dental Clinic (2 Bengaluru Branches)
+            </p>
+            <p className="text-slate-600 text-[11px]">
+              • <strong>Branch 1:</strong> Indiranagar Main Clinic (#42, 12th Main Road)
+            </p>
+            <p className="text-slate-600 text-[11px]">
+              • <strong>Branch 2:</strong> Koramangala Center (80 Feet Road, 4th Block)
             </p>
             <p className="text-slate-600 text-[11px]">
               • <strong>Doctors:</strong> Dr. Rohan Sharma (Endodontist) & Dr. Pooja Iyer (Aligners)

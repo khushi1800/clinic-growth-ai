@@ -162,3 +162,54 @@ test('Identity Extraction: Correctly captures patient full name when explicitly 
 
   assert.equal(result.leadData?.name, 'Vikramaditya Singh', 'Should extract patient full name')
 })
+
+test('Multi-Branch Support: Prompts patient to select branch when clinic operates 2 addresses', async () => {
+  const multiBranchContext: ClinicContext = {
+    ...mockClinicContext,
+    branches: [
+      {
+        id: 'branch-01',
+        name: 'Indiranagar Main Clinic',
+        address: '#42, 12th Main Road, Indiranagar',
+        city: 'Bengaluru',
+      },
+      {
+        id: 'branch-02',
+        name: 'Koramangala Center',
+        address: '80 Feet Road, 4th Block, Koramangala',
+        city: 'Bengaluru',
+      },
+    ],
+  }
+
+  // 1. Patient requests appointment without specifying branch
+  const resultWithoutBranch = await handleMessage({
+    clinicId: multiBranchContext.clinicId,
+    conversationId: 'conv-test-branch-1',
+    userMessage: 'I need to book an appointment with a dentist tomorrow morning. My name is Aarav, phone 9845012345',
+    clinicContext: multiBranchContext,
+    conversationHistory: [],
+  })
+
+  // The AI must ask the user which branch / location they want
+  const lowerResp = resultWithoutBranch.response.toLowerCase()
+  assert.ok(
+    lowerResp.includes('branch') || lowerResp.includes('indiranagar') || lowerResp.includes('koramangala'),
+    'Must present clinic branch options when clinic has 2 addresses'
+  )
+
+  // 2. Patient specifies a branch
+  const resultWithBranch = await handleMessage({
+    clinicId: multiBranchContext.clinicId,
+    conversationId: 'conv-test-branch-2',
+    userMessage: 'Please book my appointment at the Koramangala branch tomorrow at 11 AM. My name is Aarav, phone 9845012345',
+    clinicContext: multiBranchContext,
+    conversationHistory: [],
+  })
+
+  assert.equal(
+    resultWithBranch.leadData?.preferredBranch,
+    'Koramangala Center',
+    'Should correctly extract the selected branch name'
+  )
+})

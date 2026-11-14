@@ -59,6 +59,15 @@ export interface ClinicFAQ {
   category?: 'pricing' | 'timing' | 'location' | 'treatments' | 'insurance' | 'general';
 }
 
+export interface ClinicBranchContext {
+  id: string;
+  name: string;
+  address: string;
+  city?: string;
+  phone?: string;
+  isMain?: boolean;
+}
+
 export interface ClinicContext {
   clinicId: string;
   name: string;
@@ -70,6 +79,7 @@ export interface ClinicContext {
   city?: string;
   landmark?: string;
   mapsUrl?: string;
+  branches?: ClinicBranchContext[];
   businessHours?: Record<string, string> | string;
   doctors?: ClinicDoctor[];
   services?: ClinicService[];
@@ -107,6 +117,7 @@ export interface LeadData {
   email?: string;
   concern?: string;
   serviceRequested?: string;
+  preferredBranch?: string;
   preferredDate?: string;
   preferredTime?: string;
   preferredDoctor?: string;
@@ -144,6 +155,8 @@ export interface AppointmentRequest {
   email?: string;
   preferredDate: string;
   preferredTimeSlot: string;
+  branchName?: string;
+  branchId?: string;
   doctorId?: string;
   doctorName?: string;
   service?: string;

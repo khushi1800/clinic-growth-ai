@@ -1,5 +1,5 @@
 import type { AIProvider } from './provider';
-import type { ChatMessage, AIOptions, AIResponse, ClinicContext, Action } from './types';
+import type { ChatMessage, AIOptions, AIResponse, ClinicContext, Action, ClinicBranchContext } from './types';
 import { checkEmergencySymptoms } from './prompts';
 
 export interface MockAIProviderOptions {
@@ -24,6 +24,24 @@ export const DEFAULT_MOCK_CLINIC_CONTEXT: ClinicContext = {
     Sunday: '10:00 AM - 02:00 PM (Prior Appointment Only)',
   },
   emergencyContact: '+91 98765 43211',
+  branches: [
+    {
+      id: 'branch-01',
+      name: 'Indiranagar Main Clinic',
+      address: '#42, 12th Main Road, HAL 2nd Stage, Indiranagar',
+      city: 'Bengaluru',
+      phone: '+91 98450 12345',
+      isMain: true,
+    },
+    {
+      id: 'branch-02',
+      name: 'Koramangala Center',
+      address: '80 Feet Road, 4th Block, Koramangala',
+      city: 'Bengaluru',
+      phone: '+91 98450 12346',
+      isMain: false,
+    },
+  ],
   doctors: [
     {
       id: 'doc_1',
@@ -203,6 +221,31 @@ export function extractName(text: string): string | null {
     }
   }
 
+  return null;
+}
+
+/**
+ * Extracts preferred clinic branch / location from user message or context.
+ */
+export function extractBranch(text: string, branches?: ClinicBranchContext[]): string | null {
+  if (!branches || branches.length === 0) return null;
+  const lower = text.toLowerCase();
+  for (const b of branches) {
+    const bName = b.name.toLowerCase();
+    const bAddr = b.address.toLowerCase();
+    const keywords = bName
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !['clinic', 'center', 'main', 'road', 'branch'].includes(w));
+    if (lower.includes(bName) || keywords.some((k) => lower.includes(k))) {
+      return b.name;
+    }
+    const addrKeywords = bAddr
+      .split(/[\s,]+/)
+      .filter((w) => w.length > 3 && !['road', 'floor', 'stage', 'main', 'bengaluru', 'bangalore', 'sector'].includes(w));
+    if (addrKeywords.some((k) => lower.includes(k))) {
+      return b.name;
+    }
+  }
   return null;
 }
 
@@ -430,6 +473,8 @@ export class MockAIProvider implements AIProvider {
     const extractedName = rawExtractedName && rawExtractedName.toLowerCase() !== 'maya' ? rawExtractedName : null;
     const extractedDate = extractDatePreference(userMessage);
     const extractedTime = extractTimePreference(userMessage);
+    const extractedBranch = extractBranch(userMessage, clinic.branches) || extractBranch(history, clinic.branches);
+    const hasMultipleBranches = Boolean(clinic.branches && clinic.branches.length > 1);
 
     // Check if message is primarily asking about location, address, or operating hours
     const isHoursOrLocationInquiry =
@@ -440,6 +485,7 @@ export class MockAIProvider implements AIProvider {
       lower.includes('where is the clinic') ||
       lower.includes('location') ||
       lower.includes('address') ||
+      lower.includes('branch') ||
       lower.includes('kahan');
 
     // 3. TIMINGS & LOCATION INQUIRIES (check before booking if explicitly asking about hours/address)
@@ -451,18 +497,37 @@ export class MockAIProvider implements AIProvider {
               .map(([d, h]) => `• **${d}:** ${h}`)
               .join('\n');
 
+      let locationText = '';
+      let branchReplies: string[] = [];
+      if (clinic.branches && clinic.branches.length > 0) {
+        locationText = clinic.branches
+          .map(
+            (b, i) =>
+              `📍 **Branch ${i + 1} (${b.name}):** ${b.address}${b.city ? `, ${b.city}` : ''}${
+                b.phone ? ` (📞 ${b.phone})` : ''
+              }`
+          )
+          .join('\n\n');
+        branchReplies = clinic.branches.map((b) => b.name);
+      } else {
+        locationText = `📍 **Address:** ${clinic.address}${clinic.landmark ? ` (${clinic.landmark})` : ''}${
+          clinic.city ? `, ${clinic.city}` : ''
+        }\n📞 **Phone:** ${clinic.phone}`;
+      }
+
       const actionData = {
         actions: [{ type: 'collect_info', payload: { intent: 'hours_and_location' } }],
         shouldEscalate: false,
-        suggestedQuickReplies: ['Book an Appointment', 'Doctor Specializations', 'Call Clinic Front Desk'],
+        suggestedQuickReplies: [...branchReplies, 'Book an Appointment', 'Doctor Specializations'],
       };
 
       return (
-        `Here are the clinic details for **${clinic.name}**:\n\n` +
-        `📍 **Address:** ${clinic.address}${clinic.landmark ? ` (${clinic.landmark})` : ''}${clinic.city ? `, ${clinic.city}` : ''}\n` +
-        `📞 **Phone:** ${clinic.phone}\n\n` +
+        `Here are the clinic locations and timings for **${clinic.name}**:\n\n` +
+        `${locationText}\n\n` +
         `🕒 **Operating Hours:**\n${hoursText}\n\n` +
-        `We have ample parking and are conveniently situated near public transit. Would you like to schedule a visit today or tomorrow?` +
+        (hasMultipleBranches
+          ? `We have 2 branches across the city. Which branch is more convenient for you? Would you like to schedule an appointment?`
+          : `We have ample parking and are conveniently situated near public transit. Would you like to schedule a visit today or tomorrow?`) +
         `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
       );
     }
@@ -477,12 +542,55 @@ export class MockAIProvider implements AIProvider {
       (extractedName && extractedPhone && (extractedDate || extractedTime));
 
     if (isBookingIntent || (extractedName && extractedPhone)) {
+      // If clinic has multiple branches and patient hasn't picked one yet, ask them to choose!
+      if (hasMultipleBranches && !extractedBranch) {
+        const branchList = clinic.branches!
+          .map((b, i) => `• **Option ${i + 1} (${b.name}):** ${b.address}`)
+          .join('\n');
+
+        const branchQuickReplies = clinic.branches!.map((b) => b.name);
+
+        const actionData = {
+          leadData: {
+            name: extractedName || undefined,
+            phone: extractedPhone || undefined,
+            preferredDate: extractedDate || undefined,
+            preferredTime: extractedTime || undefined,
+            status: 'interested',
+          },
+          actions: [
+            {
+              type: 'collect_info',
+              payload: { missing: ['preferredBranch'] },
+            },
+          ],
+          shouldEscalate: false,
+          suggestedQuickReplies: [...branchQuickReplies, 'Earliest Available Slot'],
+        };
+
+        return (
+          `I would be delighted to schedule your visit with our specialist at **${clinic.name}**! 🦷\n\n` +
+          `Since we have **2 clinic locations**, which branch would be more convenient for you?\n\n` +
+          `${branchList}\n\n` +
+          `${
+            !extractedPhone || !extractedName
+              ? `Could you also please share your **Full Name** and **10-digit Phone Number**?`
+              : `Please reply with your preferred branch location so I can reserve your doctor slot!`
+          }` +
+          `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+        );
+      }
+
       // Check if we have complete information to book
       if (extractedName && extractedPhone && (extractedDate || extractedTime)) {
+        const selectedBranch = extractedBranch || clinic.branches?.[0]?.name || clinic.name;
+        const branchAddr = clinic.branches?.find((b) => b.name === selectedBranch)?.address || clinic.address;
+
         const actionData = {
           leadData: {
             name: extractedName,
             phone: extractedPhone,
+            preferredBranch: selectedBranch,
             preferredDate: extractedDate || 'Next Available Slot',
             preferredTime: extractedTime || 'Morning Slot',
             urgency: 'high',
@@ -494,6 +602,7 @@ export class MockAIProvider implements AIProvider {
               payload: {
                 patientName: extractedName,
                 phone: extractedPhone,
+                branchName: selectedBranch,
                 date: extractedDate || 'Next Available Slot',
                 time: extractedTime || 'Morning Slot',
                 clinicId: clinic.clinicId,
@@ -504,6 +613,7 @@ export class MockAIProvider implements AIProvider {
               payload: {
                 name: extractedName,
                 phone: extractedPhone,
+                preferredBranch: selectedBranch,
                 source: 'ai_chat',
                 status: 'appointment_requested',
               },
@@ -519,9 +629,9 @@ export class MockAIProvider implements AIProvider {
           `I have captured your appointment request:\n` +
           `• **Patient:** ${patientDisplayName}\n` +
           `• **Contact Number:** ${extractedPhone}\n` +
+          `• **Clinic Branch:** ${selectedBranch} (${branchAddr})\n` +
           `• **Preferred Date:** ${extractedDate || 'Earliest slot available'}\n` +
-          `• **Preferred Time:** ${extractedTime || '11:00 AM'}\n` +
-          `• **Location:** ${clinic.name}, ${clinic.address}\n\n` +
+          `• **Preferred Time:** ${extractedTime || '11:00 AM'}\n\n` +
           `Our clinic receptionist is sending an official confirmation SMS/WhatsApp with doctor details and your token number right now. Is there anything specific you would like the doctor to know beforehand?` +
           `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
         );

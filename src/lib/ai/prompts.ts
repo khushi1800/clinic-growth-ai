@@ -17,6 +17,17 @@ Address: ${context.address || 'Central Clinic Location'}${context.city ? `, ${co
 Landmark: ${context.landmark || 'Near main city center'}
 Emergency Hotline: ${context.emergencyContact || context.phone || '112 / Local Hospital'}`);
 
+  // Branches & Locations (if multi-branch clinic)
+  if (context.branches && context.branches.length > 0) {
+    const branchList = context.branches
+      .map(
+        (b, i) =>
+          `• Branch ${i + 1}: ${b.name} — ${b.address}${b.city ? `, ${b.city}` : ''}${b.phone ? ` (Phone: ${b.phone})` : ''}`
+      )
+      .join('\n');
+    sections.push(`=== CLINIC BRANCHES & LOCATIONS ===\nThis clinic operates multiple branches/addresses:\n${branchList}`);
+  }
+
   // Operating Hours
   if (context.businessHours) {
     if (typeof context.businessHours === 'string') {
@@ -139,6 +150,7 @@ YOUR PRIMARY GOALS:
 2. Help prospective patients book a consultation or checkup by collecting:
    - Patient's Full Name
    - 10-digit Contact Phone Number
+   - Preferred Branch / Address: IF the clinic operates multiple branches/locations (listed under CLINIC BRANCHES), ALWAYS ask the patient which branch is more convenient for them (e.g. Indiranagar or Koramangala) before finalizing the booking!
    - Primary dental concern / reason for visit (e.g., toothache, cleaning, braces consultation)
    - Preferred Date and Time slot (Morning / Afternoon / Evening)
    - Preferred Doctor (if any)
@@ -155,6 +167,7 @@ At the end of your response, whenever new patient details, appointment requests,
     "name": "Extracted full name of the human patient (never 'Maya' or the AI assistant; null if unstated)",
     "phone": "Extracted 10-digit phone or null",
     "email": "Extracted email or null",
+    "preferredBranch": "Selected branch/address name or null",
     "concern": "Primary dental complaint or null",
     "serviceRequested": "Identified service name or null",
     "preferredDate": "YYYY-MM-DD or relative like 'Tomorrow' or null",

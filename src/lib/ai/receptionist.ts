@@ -18,6 +18,7 @@ import {
   extractName,
   extractDatePreference,
   extractTimePreference,
+  extractBranch,
 } from './mock-provider';
 
 export interface HandleMessageInput {
@@ -227,6 +228,11 @@ export async function handleMessage(input: {
     actionData?.leadData?.phone || extractPhone(userMessage) || extractPhone(allUserText);
   const detectedName =
     validActionName || extractName(userMessage) || extractName(allUserText) || null;
+  const detectedBranch =
+    actionData?.leadData?.preferredBranch ||
+    extractBranch(userMessage, clinicContext.branches) ||
+    extractBranch(allUserText, clinicContext.branches) ||
+    null;
   const detectedDate = actionData?.leadData?.preferredDate || extractDatePreference(userMessage);
   const detectedTime = actionData?.leadData?.preferredTime || extractTimePreference(userMessage);
 
@@ -240,6 +246,7 @@ export async function handleMessage(input: {
         clinicId,
         name: detectedName || 'Prospective Patient',
         phone: detectedPhone,
+        preferredBranch: detectedBranch || undefined,
         source: 'ai_chat',
         status: detectedDate ? 'appointment_requested' : 'contacted',
       },
@@ -256,6 +263,7 @@ export async function handleMessage(input: {
         phone: detectedPhone,
         preferredDate: detectedDate,
         preferredTime: detectedTime || 'Morning Slot',
+        branchName: detectedBranch || clinicContext.branches?.[0]?.name || 'Main Clinic',
       },
     });
   }
@@ -263,6 +271,7 @@ export async function handleMessage(input: {
   const combinedLeadData: Partial<LeadData> = {
     name: detectedName || undefined,
     phone: detectedPhone || undefined,
+    preferredBranch: detectedBranch || undefined,
     preferredDate: detectedDate || undefined,
     preferredTime: detectedTime || undefined,
     concern: actionData?.leadData?.concern || undefined,
