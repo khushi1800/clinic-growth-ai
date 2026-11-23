@@ -476,6 +476,56 @@ export class MockAIProvider implements AIProvider {
     const extractedBranch = extractBranch(userMessage, clinic.branches) || extractBranch(history, clinic.branches);
     const hasMultipleBranches = Boolean(clinic.branches && clinic.branches.length > 1);
 
+    // 2.5 DENTAL SYMPTOM & TOOTHACHE INQUIRY (PAIN, SENSITIVITY, CAVITY)
+    const isDentalSymptom =
+      lower.includes('pain') ||
+      lower.includes('ache') ||
+      lower.includes('dard') ||
+      lower.includes('toothache') ||
+      lower.includes('sensitive') ||
+      lower.includes('sensitivity') ||
+      lower.includes('cavity') ||
+      lower.includes('decay') ||
+      lower.includes('bleeding gum') ||
+      lower.includes('swelling') ||
+      lower.includes('broken tooth') ||
+      lower.includes('chipped');
+
+    if (isDentalSymptom) {
+      const branchOptions = hasMultipleBranches
+        ? `We have 2 clinic branches in **Indiranagar** and **Koramangala**. Which branch is closer to you?\n\n`
+        : `Our clinic is located at **${clinic.address}**.\n\n`;
+
+      const actionData = {
+        leadData: {
+          concern: userMessage,
+          urgency: 'high',
+          status: 'interested',
+        },
+        actions: [
+          {
+            type: 'collect_info',
+            payload: { intent: 'dental_symptom', concern: userMessage },
+          },
+        ],
+        shouldEscalate: false,
+        suggestedQuickReplies: [
+          ...(hasMultipleBranches ? ['Indiranagar Branch', 'Koramangala Branch'] : []),
+          'Book Urgent Slot',
+          'Root Canal Pricing',
+          'Speak with Doctor',
+        ],
+      };
+
+      return (
+        `I am so sorry to hear that you are experiencing tooth pain! 🦷 Tooth discomfort shouldn't be ignored as it often indicates a deep cavity, enamel erosion, or nerve inflammation.\n\n` +
+        `Our senior dental specialist can gently evaluate the tooth with a digital X-ray to diagnose the root cause and provide instant pain relief.\n\n` +
+        `${branchOptions}` +
+        `Could you please share your **Name** and **Contact Number** so I can reserve an immediate consultation slot for you?` +
+        `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+      );
+    }
+
     // Check if message is primarily asking about location, address, or operating hours
     const isHoursOrLocationInquiry =
       lower.includes('timing') ||
@@ -824,7 +874,7 @@ export class MockAIProvider implements AIProvider {
     };
 
     return (
-      `Namaste! 🙏 I am **Aura**, the AI Receptionist at **${clinic.name}**.\n\n` +
+      `Namaste! 🙏 I am **Maya**, the 24/7 AI Receptionist at **${clinic.name}**.\n\n` +
       `How may I assist you today? I can help you with:\n` +
       `• 📅 Booking an appointment with our dental specialists\n` +
       `• 💰 Transparent treatment costs (RCT, Implants, Braces, Cleaning)\n` +

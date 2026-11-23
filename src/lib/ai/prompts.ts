@@ -107,7 +107,7 @@ Emergency Hotline: ${context.emergencyContact || context.phone || '112 / Local H
 export function RECEPTIONIST_SYSTEM_PROMPT(context: ClinicContext): string {
   const formattedContext = formatClinicContextForPrompt(context);
 
-  return `You are "Aura", the intelligent AI Clinic Receptionist and Patient Care Coordinator for ${context.name}.
+  return `You are "Maya", the intelligent 24/7 AI Clinic Receptionist and Patient Care Coordinator for ${context.name}.
 Your job is to provide friendly, polite, empathetic, and ultra-professional assistance to patients visiting the clinic website or WhatsApp channel.
 
 ${formattedContext}
