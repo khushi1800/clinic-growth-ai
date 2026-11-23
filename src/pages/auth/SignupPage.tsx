@@ -17,22 +17,69 @@ export const SignupPage: React.FC = () => {
     agreeTerms: true,
   });
 
-  const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const updateField = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!formData.clinicName.trim()) {
+      errs.clinicName = 'Clinic name is required';
+    } else if (formData.clinicName.trim().length < 2) {
+      errs.clinicName = 'Clinic name must be at least 2 characters';
+    }
+
+    if (!formData.doctorName.trim()) {
+      errs.doctorName = 'Doctor name is required';
+    }
+
+    if (!formData.phone.trim()) {
+      errs.phone = 'Mobile number is required';
+    } else {
+      const cleanPhone = formData.phone
+        .replace(/\D/g, '')
+        .replace(/^91(?=\d{10}$)/, '')
+        .replace(/^0(?=\d{10}$)/, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        errs.phone = 'Please enter a valid 10-digit Indian mobile number';
+      }
+    }
+
+    if (!formData.email.trim()) {
+      errs.email = 'Email address is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      errs.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters';
+    }
+
+    if (!formData.agreeTerms) {
+      errs.agreeTerms = 'You must agree to the Terms of Service';
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.clinicName || !formData.doctorName || !formData.email || !formData.password) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
+    if (!validate()) return;
 
     setIsLoading(true);
-    setError('');
 
     setTimeout(() => {
       setIsLoading(false);
@@ -51,20 +98,14 @@ export const SignupPage: React.FC = () => {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2 text-xs text-red-700">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <Input
             label="Clinic Name *"
             placeholder="e.g. Ivory Dental Studio"
             leftIcon={<Building className="w-4 h-4" />}
             value={formData.clinicName}
-            onChange={e => setFormData({ ...formData, clinicName: e.target.value })}
+            onChange={e => updateField('clinicName', e.target.value)}
+            error={formErrors.clinicName}
             required
           />
 
@@ -73,17 +114,20 @@ export const SignupPage: React.FC = () => {
             placeholder="e.g. Dr. Ananya Sharma, MDS"
             leftIcon={<User className="w-4 h-4" />}
             value={formData.doctorName}
-            onChange={e => setFormData({ ...formData, doctorName: e.target.value })}
+            onChange={e => updateField('doctorName', e.target.value)}
+            error={formErrors.doctorName}
             required
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Clinic Phone *"
-              placeholder="+91 98450..."
+              placeholder="e.g. 9845012345"
               leftIcon={<Phone className="w-4 h-4" />}
               value={formData.phone}
-              onChange={e => setFormData({ ...formData, phone: e.target.value })}
+              onChange={e => updateField('phone', e.target.value)}
+              error={formErrors.phone}
+              helperText="10-digit Indian mobile number"
               required
             />
             <Input
@@ -92,7 +136,8 @@ export const SignupPage: React.FC = () => {
               placeholder="doctor@clinic.com"
               leftIcon={<Mail className="w-4 h-4" />}
               value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              onChange={e => updateField('email', e.target.value)}
+              error={formErrors.email}
               required
             />
           </div>
@@ -103,21 +148,27 @@ export const SignupPage: React.FC = () => {
             placeholder="••••••••"
             leftIcon={<Lock className="w-4 h-4" />}
             value={formData.password}
-            onChange={e => setFormData({ ...formData, password: e.target.value })}
+            onChange={e => updateField('password', e.target.value)}
+            error={formErrors.password}
             required
           />
 
-          <div className="flex items-start gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={formData.agreeTerms}
-              onChange={e => setFormData({ ...formData, agreeTerms: e.target.checked })}
-              className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <label htmlFor="terms" className="text-[11px] text-slate-500">
-              I agree to Clinic Growth AI's Terms of Service, Business Associate Agreement, and Privacy Policy.
-            </label>
+          <div className="flex flex-col gap-1 pt-1">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={formData.agreeTerms}
+                onChange={e => updateField('agreeTerms', e.target.checked)}
+                className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="terms" className="text-[11px] text-slate-500">
+                I agree to Clinic Growth AI's Terms of Service, Business Associate Agreement, and Privacy Policy.
+              </label>
+            </div>
+            {formErrors.agreeTerms && (
+              <p className="text-[11px] text-red-600">{formErrors.agreeTerms}</p>
+            )}
           </div>
 
           <Button

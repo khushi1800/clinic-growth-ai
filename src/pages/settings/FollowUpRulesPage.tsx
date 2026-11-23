@@ -19,6 +19,36 @@ export const FollowUpRulesPage: React.FC = () => {
     channel: 'whatsapp',
     message_template: 'Hi {{name}}, we noticed you enquired about our dental treatments. Would you like to schedule a consultation?',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateField = (field: string, value: any) => {
+    setNewRule(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!newRule.name.trim()) {
+      errs.name = 'Rule name is required';
+    } else if (newRule.name.trim().length < 3) {
+      errs.name = 'Rule name must be at least 3 characters';
+    }
+
+    if (!newRule.message_template.trim()) {
+      errs.message_template = 'Message template is required';
+    } else if (newRule.message_template.trim().length < 10) {
+      errs.message_template = 'Message template must be at least 10 characters';
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const toggleRule = (id: string) => {
     setRules(prev =>
@@ -28,7 +58,7 @@ export const FollowUpRulesPage: React.FC = () => {
 
   const handleCreateRule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRule.name) return;
+    if (!validate()) return;
     const ruleObj: any = {
       ...newRule,
       id: `rule-${Date.now()}`,
@@ -47,6 +77,7 @@ export const FollowUpRulesPage: React.FC = () => {
       channel: 'whatsapp',
       message_template: '',
     });
+    setFormErrors({});
   };
 
   return (
@@ -139,17 +170,21 @@ export const FollowUpRulesPage: React.FC = () => {
       {/* Create Rule Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFormErrors({});
+        }}
         title="Create Automated Follow-up Trigger"
         description="Set up automatic WhatsApp notifications based on lead and appointment actions."
         size="md"
       >
-        <form onSubmit={handleCreateRule} className="space-y-4">
+        <form onSubmit={handleCreateRule} className="space-y-4" noValidate>
           <Input
             label="Rule Name *"
             placeholder="e.g. 24h Missed Call WhatsApp Check-in"
             value={newRule.name}
-            onChange={e => setNewRule({ ...newRule, name: e.target.value })}
+            onChange={e => updateField('name', e.target.value)}
+            error={formErrors.name}
             required
           />
 
@@ -157,7 +192,7 @@ export const FollowUpRulesPage: React.FC = () => {
             <Select
               label="Trigger Event"
               value={newRule.trigger_event}
-              onChange={e => setNewRule({ ...newRule, trigger_event: e.target.value })}
+              onChange={e => updateField('trigger_event', e.target.value)}
               options={[
                 { label: 'Unbooked Lead (24h inactive)', value: 'lead_interested_unbooked' },
                 { label: 'After-Hours Missed Call', value: 'new_lead_after_hours' },
@@ -172,7 +207,7 @@ export const FollowUpRulesPage: React.FC = () => {
               min="0"
               max="72"
               value={newRule.delay_hours}
-              onChange={e => setNewRule({ ...newRule, delay_hours: parseInt(e.target.value) || 0 })}
+              onChange={e => updateField('delay_hours', parseInt(e.target.value) || 0)}
             />
           </div>
 
@@ -184,14 +219,29 @@ export const FollowUpRulesPage: React.FC = () => {
               rows={3}
               placeholder="Hi {{name}}, this is Dr. {{doctor}}'s clinic..."
               value={newRule.message_template}
-              onChange={e => setNewRule({ ...newRule, message_template: e.target.value })}
-              className="w-full p-3 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={e => updateField('message_template', e.target.value)}
+              className={`w-full p-3 text-xs rounded-lg border focus:outline-none focus:ring-1 ${
+                formErrors.message_template
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50/20'
+                  : 'border-slate-300 focus:ring-blue-500'
+              }`}
               required
             />
+            {formErrors.message_template && (
+              <p className="text-[11px] text-red-600 mt-1">{formErrors.message_template}</p>
+            )}
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

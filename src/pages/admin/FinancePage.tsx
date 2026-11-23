@@ -30,6 +30,41 @@ export const FinancePage: React.FC = () => {
     description: '',
     date: new Date().toISOString().split('T')[0],
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateField = (field: string, value: string) => {
+    setNewEntry(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    const parsed = parseFloat(newEntry.amount);
+    if (!newEntry.amount.trim()) {
+      errs.amount = 'Amount is required';
+    } else if (isNaN(parsed) || parsed <= 0) {
+      errs.amount = 'Amount must be a positive number';
+    }
+
+    if (!newEntry.description.trim()) {
+      errs.description = 'Description is required';
+    } else if (newEntry.description.trim().length < 3) {
+      errs.description = 'Description must be at least 3 characters';
+    }
+
+    if (!newEntry.date) {
+      errs.date = 'Date is required';
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const totalRevenue = financeRecords
     .filter(r => r.type.startsWith('revenue'))
@@ -43,11 +78,11 @@ export const FinancePage: React.FC = () => {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.amount || !newEntry.description) return;
+    if (!validate()) return;
     addFinanceRecord({
       type: newEntry.type,
       amount: parseFloat(newEntry.amount),
-      description: newEntry.description,
+      description: newEntry.description.trim(),
       date: newEntry.date,
       customer_id: null,
     });
@@ -58,6 +93,7 @@ export const FinancePage: React.FC = () => {
       description: '',
       date: new Date().toISOString().split('T')[0],
     });
+    setFormErrors({});
   };
 
   return (
@@ -170,17 +206,20 @@ export const FinancePage: React.FC = () => {
       {/* Add Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFormErrors({});
+        }}
         title="Add Finance Entry"
         description="Log an operational expense or subscription invoice receipt."
         size="md"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleCreate} className="space-y-4" noValidate>
           <div className="grid grid-cols-2 gap-3">
             <Select
               label="Type"
               value={newEntry.type}
-              onChange={e => setNewEntry({ ...newEntry, type: e.target.value as FinanceType })}
+              onChange={e => updateField('type', e.target.value as FinanceType)}
               options={[
                 { label: 'Recurring Subscription Revenue', value: 'revenue_recurring' },
                 { label: 'One-Time Setup Fee Revenue', value: 'revenue_setup' },
@@ -193,7 +232,8 @@ export const FinancePage: React.FC = () => {
               type="number"
               placeholder="e.g. 19999"
               value={newEntry.amount}
-              onChange={e => setNewEntry({ ...newEntry, amount: e.target.value })}
+              onChange={e => updateField('amount', e.target.value)}
+              error={formErrors.amount}
               required
             />
           </div>
@@ -202,20 +242,30 @@ export const FinancePage: React.FC = () => {
             label="Description *"
             placeholder="e.g. Meta WhatsApp Cloud API November bill"
             value={newEntry.description}
-            onChange={e => setNewEntry({ ...newEntry, description: e.target.value })}
+            onChange={e => updateField('description', e.target.value)}
+            error={formErrors.description}
             required
           />
 
           <Input
-            label="Transaction Date"
+            label="Transaction Date *"
             type="date"
             value={newEntry.date}
-            onChange={e => setNewEntry({ ...newEntry, date: e.target.value })}
+            onChange={e => updateField('date', e.target.value)}
+            error={formErrors.date}
             required
           />
 
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

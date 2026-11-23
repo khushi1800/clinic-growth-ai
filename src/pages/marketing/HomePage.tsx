@@ -45,7 +45,7 @@ export const HomePage: React.FC = () => {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/demo">
               <Button size="lg" className="w-full sm:w-auto text-base px-8 py-3.5" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Book a 15-Min Live Demo
+                Schedule Clinic Demo
               </Button>
             </Link>
             <Link to="/dashboard">
@@ -344,9 +344,9 @@ export const HomePage: React.FC = () => {
               </ul>
             </div>
             <div className="mt-6">
-              <Link to="/pricing">
+              <Link to="/demo">
                 <Button variant="outline" className="w-full">
-                  View Plan Details
+                  Schedule Clinic Demo
                 </Button>
               </Link>
             </div>
@@ -378,7 +378,7 @@ export const HomePage: React.FC = () => {
             <div className="mt-6">
               <Link to="/demo">
                 <Button variant="primary" className="w-full">
-                  Book Guided Demo
+                  Schedule Clinic Demo
                 </Button>
               </Link>
             </div>

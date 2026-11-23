@@ -10,15 +10,29 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('rohan@smiledentalcare.demo');
   const [password, setPassword] = useState('demo123456');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!email.trim()) {
+      errs.email = 'Email address is required';
+    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      errs.password = 'Password is required';
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please provide both email and password.');
-      return;
-    }
+    if (!validate()) return;
 
     setIsLoading(true);
     setError('');
@@ -64,21 +78,25 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <Input
-            label="Email Address"
+            label="Email Address *"
             type="email"
             placeholder="doctor@smiledentalcare.demo"
             leftIcon={<Mail className="w-4 h-4" />}
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={e => {
+              setEmail(e.target.value);
+              if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: '' }));
+            }}
+            error={fieldErrors.email}
             required
           />
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                Password
+                Password *
               </label>
               <Link
                 to="/forgot-password"
@@ -92,7 +110,11 @@ export const LoginPage: React.FC = () => {
               placeholder="••••••••"
               leftIcon={<Lock className="w-4 h-4" />}
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' }));
+              }}
+              error={fieldErrors.password}
               required
             />
           </div>

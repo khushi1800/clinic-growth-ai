@@ -8,13 +8,22 @@ import { Badge } from '@/components/ui/Badge';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email.trim()) {
+      setEmailError('Email address is required');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
 
+    setEmailError('');
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
@@ -51,14 +60,18 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
-              label="Clinic Email Address"
+              label="Clinic Email Address *"
               type="email"
               placeholder="doctor@smiledentalcare.demo"
               leftIcon={<Mail className="w-4 h-4" />}
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError('');
+              }}
+              error={emailError}
               required
             />
 

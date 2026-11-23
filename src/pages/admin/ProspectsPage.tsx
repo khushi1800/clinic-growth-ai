@@ -40,6 +40,74 @@ export const ProspectsPage: React.FC = () => {
     next_action: '',
     notes: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateField = (field: string, value: any) => {
+    setNewProspect(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!newProspect.clinic_name.trim()) {
+      errs.clinic_name = 'Clinic name is required';
+    } else if (newProspect.clinic_name.trim().length < 2) {
+      errs.clinic_name = 'Clinic name must be at least 2 characters';
+    }
+
+    if (!newProspect.location.trim()) {
+      errs.location = 'City / Location is required';
+    }
+
+    if (newProspect.contact_phone) {
+      const clean = newProspect.contact_phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+      if (!/^[6-9]\d{9}$/.test(clean)) {
+        errs.contact_phone = 'Please enter a valid 10-digit Indian mobile number';
+      }
+    }
+
+    if (newProspect.contact_email && !/\S+@\S+\.\S+/.test(newProspect.contact_email.trim())) {
+      errs.contact_email = 'Please enter a valid email address';
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleAddProspect = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const item: Prospect = {
+      ...newProspect,
+      clinic_name: newProspect.clinic_name.trim(),
+      location: newProspect.location.trim(),
+      id: `pros-${Date.now()}`,
+      website: null,
+      source_url: 'Manual Outbound Entry',
+      research_date: new Date().toISOString().split('T')[0],
+      last_interaction_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+    setProspectList(prev => [item, ...prev]);
+    setIsAddOpen(false);
+    setNewProspect({
+      clinic_name: '',
+      location: '',
+      contact_phone: '',
+      contact_email: '',
+      qualification_score: 85,
+      sales_status: 'contacted',
+      next_action: '',
+      notes: '',
+    });
+    setFormErrors({});
+  };
 
   const filtered = prospectList.filter(
     p => stageFilter === 'ALL' || p.sales_status === stageFilter
@@ -59,22 +127,6 @@ export const ProspectsPage: React.FC = () => {
     };
     const c = map[status] || { label: status, variant: 'default' };
     return <Badge variant={c.variant} size="sm" dot>{c.label}</Badge>;
-  };
-
-  const handleAddProspect = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProspect.clinic_name) return;
-    const item: Prospect = {
-      ...newProspect,
-      id: `pros-${Date.now()}`,
-      website: null,
-      source_url: 'Manual Outbound Entry',
-      research_date: new Date().toISOString().split('T')[0],
-      last_interaction_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    };
-    setProspectList(prev => [item, ...prev]);
-    setIsAddOpen(false);
   };
 
   return (
@@ -238,24 +290,29 @@ export const ProspectsPage: React.FC = () => {
       {/* Add Modal */}
       <Modal
         isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
+        onClose={() => {
+          setIsAddOpen(false);
+          setFormErrors({});
+        }}
         title="Add Dental Clinic Prospect"
         description="Record a new target clinic to track in the sales pipeline."
         size="md"
       >
-        <form onSubmit={handleAddProspect} className="space-y-4">
+        <form onSubmit={handleAddProspect} className="space-y-4" noValidate>
           <Input
             label="Clinic Name *"
             placeholder="e.g. Apex Orthodontics"
             value={newProspect.clinic_name}
-            onChange={e => setNewProspect({ ...newProspect, clinic_name: e.target.value })}
+            onChange={e => updateField('clinic_name', e.target.value)}
+            error={formErrors.clinic_name}
             required
           />
           <Input
             label="Location / City *"
             placeholder="e.g. Bandra West, Mumbai"
             value={newProspect.location}
-            onChange={e => setNewProspect({ ...newProspect, location: e.target.value })}
+            onChange={e => updateField('location', e.target.value)}
+            error={formErrors.location}
             required
           />
           <div className="grid grid-cols-2 gap-3">
@@ -263,19 +320,21 @@ export const ProspectsPage: React.FC = () => {
               label="Phone"
               placeholder="+91 98..."
               value={newProspect.contact_phone}
-              onChange={e => setNewProspect({ ...newProspect, contact_phone: e.target.value })}
+              onChange={e => updateField('contact_phone', e.target.value)}
+              error={formErrors.contact_phone}
             />
             <Input
               label="Email"
               placeholder="contact@clinic.com"
               value={newProspect.contact_email}
-              onChange={e => setNewProspect({ ...newProspect, contact_email: e.target.value })}
+              onChange={e => updateField('contact_email', e.target.value)}
+              error={formErrors.contact_email}
             />
           </div>
           <Select
             label="Initial Sales Stage"
             value={newProspect.sales_status}
-            onChange={e => setNewProspect({ ...newProspect, sales_status: e.target.value as SalesStatus })}
+            onChange={e => updateField('sales_status', e.target.value as SalesStatus)}
             options={[
               { label: 'Contacted', value: 'contacted' },
               { label: 'Demo Scheduled', value: 'demo_scheduled' },
@@ -287,10 +346,18 @@ export const ProspectsPage: React.FC = () => {
             label="Next Action"
             placeholder="e.g. Conduct Google Meet live demo on Friday 3 PM"
             value={newProspect.next_action}
-            onChange={e => setNewProspect({ ...newProspect, next_action: e.target.value })}
+            onChange={e => updateField('next_action', e.target.value)}
           />
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsAddOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsAddOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

@@ -36,6 +36,57 @@ export const LeadsPage: React.FC = () => {
     notes: '',
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateLeadField = (field: string, value: string) => {
+    setNewLead(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validateLeadForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!newLead.name.trim()) {
+      errors.name = 'Patient name is required';
+    } else if (newLead.name.trim().length < 2) {
+      errors.name = 'Patient name must be at least 2 characters';
+    }
+
+    if (!newLead.phone.trim()) {
+      errors.phone = 'Mobile number is required';
+    } else {
+      const cleanPhone = newLead.phone
+        .replace(/\D/g, '')
+        .replace(/^91(?=\d{10}$)/, '')
+        .replace(/^0(?=\d{10}$)/, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        errors.phone = 'Please enter a valid 10-digit Indian mobile number (e.g. 9845012345)';
+      }
+    }
+
+    if (newLead.email.trim() && !/\S+@\S+\.\S+/.test(newLead.email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateLead = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateLeadForm()) return;
+    addLead(newLead as any);
+    setIsModalOpen(false);
+    setNewLead({ name: '', phone: '', email: '', source: 'ai_chat', notes: '' });
+    setFormErrors({});
+  };
+
   const filteredLeads = leads.filter(l => {
     const matchesSearch =
       l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,13 +118,6 @@ export const LeadsPage: React.FC = () => {
     );
   };
 
-  const handleCreateLead = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLead.name) return;
-    addLead(newLead as any);
-    setIsModalOpen(false);
-    setNewLead({ name: '', phone: '', email: '', source: 'ai_chat', notes: '' });
-  };
 
   return (
     <div className="space-y-6">
@@ -225,38 +269,46 @@ export const LeadsPage: React.FC = () => {
       {/* Modal: Add New Lead */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFormErrors({});
+        }}
         title="Add New Patient Lead"
         description="Record a walk-in, inbound phone call, or external referral."
         size="md"
       >
-        <form onSubmit={handleCreateLead} className="space-y-4">
+        <form onSubmit={handleCreateLead} className="space-y-4" noValidate>
           <Input
             label="Patient Name *"
             placeholder="e.g. Ramesh Kulkarni"
             value={newLead.name}
-            onChange={e => setNewLead({ ...newLead, name: e.target.value })}
+            onChange={e => updateLeadField('name', e.target.value)}
+            error={formErrors.name}
             required
           />
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Phone Number"
-              placeholder="+91 98450..."
+              label="Mobile Number *"
+              placeholder="e.g. 9845012345"
               value={newLead.phone}
-              onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
+              onChange={e => updateLeadField('phone', e.target.value)}
+              error={formErrors.phone}
+              helperText="10-digit Indian mobile number"
+              required
             />
             <Input
               label="Email"
               placeholder="patient@email.com"
               type="email"
               value={newLead.email}
-              onChange={e => setNewLead({ ...newLead, email: e.target.value })}
+              onChange={e => updateLeadField('email', e.target.value)}
+              error={formErrors.email}
             />
           </div>
           <Select
             label="Lead Acquisition Source"
             value={newLead.source}
-            onChange={e => setNewLead({ ...newLead, source: e.target.value })}
+            onChange={e => updateLeadField('source', e.target.value)}
             options={[
               { label: 'AI Receptionist Bot', value: 'ai_chat' },
               { label: 'Direct WhatsApp', value: 'whatsapp' },
@@ -270,11 +322,19 @@ export const LeadsPage: React.FC = () => {
             label="Chief Complaint / Treatment Notes"
             placeholder="e.g. Needs consultation for upper wisdom tooth ache"
             value={newLead.notes}
-            onChange={e => setNewLead({ ...newLead, notes: e.target.value })}
+            onChange={e => updateLeadField('notes', e.target.value)}
           />
 
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

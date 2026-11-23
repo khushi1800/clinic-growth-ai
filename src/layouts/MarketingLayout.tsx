@@ -57,7 +57,7 @@ export const MarketingLayout: React.FC = () => {
               to="/demo"
               className="inline-flex items-center justify-center font-medium rounded-lg text-xs px-3.5 py-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors gap-1.5"
             >
-              <span>Book 15-Min Demo</span>
+              <span>Schedule Clinic Demo</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -99,7 +99,7 @@ export const MarketingLayout: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2 px-4 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors"
               >
-                Book 15-Min Demo
+                Schedule Clinic Demo
               </Link>
             </div>
           </div>

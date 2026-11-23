@@ -24,6 +24,36 @@ export const FAQPage: React.FC = () => {
     answer: '',
     category: 'Treatments & Pricing',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateField = (field: string, value: string) => {
+    setNewFaq(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!newFaq.question.trim()) {
+      errs.question = 'Patient question is required';
+    } else if (newFaq.question.trim().length < 5) {
+      errs.question = 'Question must be at least 5 characters';
+    }
+
+    if (!newFaq.answer.trim()) {
+      errs.answer = 'Accurate AI answer is required';
+    } else if (newFaq.answer.trim().length < 10) {
+      errs.answer = 'Answer must be at least 10 characters to train AI properly';
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const filteredFaqs = faqs.filter(
     f =>
@@ -34,16 +64,17 @@ export const FAQPage: React.FC = () => {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFaq.question || !newFaq.answer) return;
+    if (!validate()) return;
     addFaq({
-      question: newFaq.question,
-      answer: newFaq.answer,
+      question: newFaq.question.trim(),
+      answer: newFaq.answer.trim(),
       category: newFaq.category,
       sort_order: faqs.length + 1,
       is_active: true,
     });
     setIsModalOpen(false);
     setNewFaq({ question: '', answer: '', category: 'Treatments & Pricing' });
+    setFormErrors({});
   };
 
   return (
@@ -120,16 +151,19 @@ export const FAQPage: React.FC = () => {
       {/* Add FAQ Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFormErrors({});
+        }}
         title="Teach AI Receptionist New Answer"
         description="Provide clinic-specific answers to patient questions on WhatsApp."
         size="md"
       >
-        <form onSubmit={handleAdd} className="space-y-4">
+        <form onSubmit={handleAdd} className="space-y-4" noValidate>
           <Select
             label="Category"
             value={newFaq.category}
-            onChange={e => setNewFaq({ ...newFaq, category: e.target.value })}
+            onChange={e => updateField('category', e.target.value)}
             options={[
               { label: 'Treatments & Pricing', value: 'Treatments & Pricing' },
               { label: 'Clinic Timings & Appointments', value: 'Clinic Timings' },
@@ -143,7 +177,8 @@ export const FAQPage: React.FC = () => {
             label="Patient Question *"
             placeholder="e.g. Do you accept Bajaj Finserv health EMI cards?"
             value={newFaq.question}
-            onChange={e => setNewFaq({ ...newFaq, question: e.target.value })}
+            onChange={e => updateField('question', e.target.value)}
+            error={formErrors.question}
             required
           />
 
@@ -155,14 +190,29 @@ export const FAQPage: React.FC = () => {
               rows={4}
               placeholder="e.g. Yes, we provide 0% interest EMI options for treatments above ₹15,000 via Bajaj Finserv and major credit cards."
               value={newFaq.answer}
-              onChange={e => setNewFaq({ ...newFaq, answer: e.target.value })}
-              className="w-full p-3 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={e => updateField('answer', e.target.value)}
+              className={`w-full p-3 text-xs rounded-lg border focus:outline-none focus:ring-1 ${
+                formErrors.answer
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50/20'
+                  : 'border-slate-300 focus:ring-blue-500'
+              }`}
               required
             />
+            {formErrors.answer && (
+              <p className="text-[11px] text-red-600 mt-1">{formErrors.answer}</p>
+            )}
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

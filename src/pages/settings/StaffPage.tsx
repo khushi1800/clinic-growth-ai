@@ -19,13 +19,49 @@ export const StaffPage: React.FC = () => {
     email: '',
     phone: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const updateField = (field: string, value: string) => {
+    setNewMember(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!newMember.name.trim()) {
+      errs.name = 'Full name is required';
+    } else if (newMember.name.trim().length < 2) {
+      errs.name = 'Name must be at least 2 characters';
+    }
+
+    if (newMember.email && !/\S+@\S+\.\S+/.test(newMember.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (newMember.phone) {
+      const clean = newMember.phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+      if (!/^[6-9]\d{9}$/.test(clean)) {
+        errs.phone = 'Please enter a valid 10-digit Indian phone number';
+      }
+    }
+
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMember.name) return;
+    if (!validate()) return;
     addStaff(newMember);
     setIsModalOpen(false);
     setNewMember({ name: '', role: 'doctor', email: '', phone: '' });
+    setFormErrors({});
   };
 
   const getRoleBadge = (role: string) => {
@@ -118,24 +154,28 @@ export const StaffPage: React.FC = () => {
       {/* Add Staff Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFormErrors({});
+        }}
         title="Add Staff or Specialist Doctor"
         description="Add a new clinician or front-desk receptionist to the clinic roster."
         size="md"
       >
-        <form onSubmit={handleAdd} className="space-y-4">
+        <form onSubmit={handleAdd} className="space-y-4" noValidate>
           <Input
             label="Full Name & Degrees *"
             placeholder="e.g. Dr. Kavita Nair, MDS"
             value={newMember.name}
-            onChange={e => setNewMember({ ...newMember, name: e.target.value })}
+            onChange={e => updateField('name', e.target.value)}
+            error={formErrors.name}
             required
           />
 
           <Select
             label="Role & Permissions *"
             value={newMember.role}
-            onChange={e => setNewMember({ ...newMember, role: e.target.value as StaffRole })}
+            onChange={e => updateField('role', e.target.value)}
             options={[
               { label: 'Doctor / Specialist (Appointment Calendar)', value: 'doctor' },
               { label: 'Receptionist / Front Desk (Leads & Appointments)', value: 'receptionist' },
@@ -150,18 +190,28 @@ export const StaffPage: React.FC = () => {
               type="email"
               placeholder="kavita@smiledentalcare.demo"
               value={newMember.email}
-              onChange={e => setNewMember({ ...newMember, email: e.target.value })}
+              onChange={e => updateField('email', e.target.value)}
+              error={formErrors.email}
             />
             <Input
               label="Phone"
               placeholder="+91 98450..."
               value={newMember.phone}
-              onChange={e => setNewMember({ ...newMember, phone: e.target.value })}
+              onChange={e => updateField('phone', e.target.value)}
+              error={formErrors.phone}
             />
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormErrors({});
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">

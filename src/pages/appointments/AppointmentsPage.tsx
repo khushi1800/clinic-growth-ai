@@ -41,6 +41,52 @@ export const AppointmentsPage: React.FC = () => {
     notes: '',
   });
 
+  const [bookingErrors, setBookingErrors] = useState<Record<string, string>>({});
+
+  const updateBookingField = (field: string, value: any) => {
+    setBookingForm(prev => ({ ...prev, [field]: value }));
+    if (bookingErrors[field]) {
+      setBookingErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const validateBookingForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!bookingForm.patient_name.trim()) {
+      errors.patient_name = 'Patient name is required';
+    } else if (bookingForm.patient_name.trim().length < 2) {
+      errors.patient_name = 'Patient name must be at least 2 characters';
+    }
+
+    if (!bookingForm.patient_phone.trim()) {
+      errors.patient_phone = 'Mobile number is required';
+    } else {
+      const cleanPhone = bookingForm.patient_phone
+        .replace(/\D/g, '')
+        .replace(/^91(?=\d{10}$)/, '')
+        .replace(/^0(?=\d{10}$)/, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        errors.patient_phone = 'Please enter a valid 10-digit Indian mobile number (e.g. 9845012345)';
+      }
+    }
+
+    if (!bookingForm.appointment_date) {
+      errors.appointment_date = 'Appointment date is required';
+    }
+
+    if (!bookingForm.appointment_time) {
+      errors.appointment_time = 'Appointment time is required';
+    }
+
+    setBookingErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const filteredAppointments = appointments.filter(apt => {
     const matchesStatus = statusFilter === 'ALL' || apt.status === statusFilter;
     const matchesDoctor = doctorFilter === 'ALL' || apt.doctor_name.includes(doctorFilter);
@@ -67,11 +113,11 @@ export const AppointmentsPage: React.FC = () => {
 
   const handleCreateAppointment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bookingForm.patient_name.trim() || !bookingForm.patient_phone.trim()) return;
+    if (!validateBookingForm()) return;
 
     addAppointment({
-      patient_name: bookingForm.patient_name,
-      patient_phone: bookingForm.patient_phone,
+      patient_name: bookingForm.patient_name.trim(),
+      patient_phone: bookingForm.patient_phone.trim(),
       doctor_name: bookingForm.doctor_name,
       treatment: bookingForm.treatment,
       branch_name: bookingForm.branch_name,
@@ -97,6 +143,7 @@ export const AppointmentsPage: React.FC = () => {
       duration_minutes: 30,
       notes: '',
     });
+    setBookingErrors({});
   };
 
   return (
@@ -237,10 +284,13 @@ export const AppointmentsPage: React.FC = () => {
       {/* Book New Appointment Modal */}
       <Modal
         isOpen={isBookModalOpen}
-        onClose={() => setIsBookModalOpen(false)}
+        onClose={() => {
+          setIsBookModalOpen(false);
+          setBookingErrors({});
+        }}
         title="Schedule Patient Appointment"
       >
-        <form onSubmit={handleCreateAppointment} className="space-y-4">
+        <form onSubmit={handleCreateAppointment} className="space-y-4" noValidate>
           <p className="text-xs text-slate-500">
             Book a chair directly for a patient consultation or procedure. Confirms immediately in the system.
           </p>
@@ -251,7 +301,8 @@ export const AppointmentsPage: React.FC = () => {
               placeholder="e.g. Meera Krishnan"
               leftIcon={<User className="w-4 h-4" />}
               value={bookingForm.patient_name}
-              onChange={e => setBookingForm({ ...bookingForm, patient_name: e.target.value })}
+              onChange={e => updateBookingField('patient_name', e.target.value)}
+              error={bookingErrors.patient_name}
               required
             />
             <Input
@@ -259,7 +310,9 @@ export const AppointmentsPage: React.FC = () => {
               placeholder="e.g. 9845012345"
               leftIcon={<Phone className="w-4 h-4" />}
               value={bookingForm.patient_phone}
-              onChange={e => setBookingForm({ ...bookingForm, patient_phone: e.target.value })}
+              onChange={e => updateBookingField('patient_phone', e.target.value)}
+              error={bookingErrors.patient_phone}
+              helperText="10-digit Indian mobile number"
               required
             />
           </div>
@@ -268,7 +321,7 @@ export const AppointmentsPage: React.FC = () => {
             <Select
               label="Select Doctor"
               value={bookingForm.doctor_name}
-              onChange={e => setBookingForm({ ...bookingForm, doctor_name: e.target.value })}
+              onChange={e => updateBookingField('doctor_name', e.target.value)}
               options={[
                 { label: 'Dr. Rohan Sharma, MDS (Endodontist)', value: 'Dr. Rohan Sharma, MDS' },
                 { label: 'Dr. Pooja Iyer, BDS (Cosmetic)', value: 'Dr. Pooja Iyer, BDS' },
@@ -277,7 +330,7 @@ export const AppointmentsPage: React.FC = () => {
             <Select
               label="Clinic Branch"
               value={bookingForm.branch_name}
-              onChange={e => setBookingForm({ ...bookingForm, branch_name: e.target.value })}
+              onChange={e => updateBookingField('branch_name', e.target.value)}
               options={[
                 { label: 'Indiranagar Main Clinic', value: 'Indiranagar Main Clinic' },
                 { label: 'Koramangala Center', value: 'Koramangala Center' },
@@ -290,20 +343,22 @@ export const AppointmentsPage: React.FC = () => {
               label="Appointment Date *"
               type="date"
               value={bookingForm.appointment_date}
-              onChange={e => setBookingForm({ ...bookingForm, appointment_date: e.target.value })}
+              onChange={e => updateBookingField('appointment_date', e.target.value)}
+              error={bookingErrors.appointment_date}
               required
             />
             <Input
               label="Appointment Time *"
               type="time"
               value={bookingForm.appointment_time}
-              onChange={e => setBookingForm({ ...bookingForm, appointment_time: e.target.value })}
+              onChange={e => updateBookingField('appointment_time', e.target.value)}
+              error={bookingErrors.appointment_time}
               required
             />
             <Select
               label="Duration"
               value={String(bookingForm.duration_minutes)}
-              onChange={e => setBookingForm({ ...bookingForm, duration_minutes: Number(e.target.value) })}
+              onChange={e => updateBookingField('duration_minutes', Number(e.target.value))}
               options={[
                 { label: '30 Minutes', value: '30' },
                 { label: '45 Minutes', value: '45' },
@@ -315,7 +370,7 @@ export const AppointmentsPage: React.FC = () => {
           <Select
             label="Treatment / Clinical Procedure"
             value={bookingForm.treatment}
-            onChange={e => setBookingForm({ ...bookingForm, treatment: e.target.value })}
+            onChange={e => updateBookingField('treatment', e.target.value)}
             options={[
               { label: 'Root Canal Treatment (RCT)', value: 'Root Canal Treatment (RCT)' },
               { label: 'Dental Implants Consultation', value: 'Dental Implants Consultation' },
@@ -330,7 +385,7 @@ export const AppointmentsPage: React.FC = () => {
             label="Clinical Notes / Pre-visit Instructions"
             placeholder="e.g. Sensitivity to hot/cold, wants RVG digital X-ray"
             value={bookingForm.notes}
-            onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })}
+            onChange={e => updateBookingField('notes', e.target.value)}
           />
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -338,7 +393,10 @@ export const AppointmentsPage: React.FC = () => {
               type="button"
               variant="outline"
               size="md"
-              onClick={() => setIsBookModalOpen(false)}
+              onClick={() => {
+                setIsBookModalOpen(false);
+                setBookingErrors({});
+              }}
             >
               Cancel
             </Button>
