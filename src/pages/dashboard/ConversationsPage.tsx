@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
+import { FormattedChatMessage } from '@/components/chat/FormattedChatMessage';
 import { useMockData } from '@/hooks/useMockData';
 import type { Message } from '@/types/database';
 
@@ -165,7 +166,7 @@ export const ConversationsPage: React.FC = () => {
                         })}
                       </span>
                     </div>
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <FormattedChatMessage content={msg.content} />
 
                     {msg.metadata && Object.keys(msg.metadata).length > 0 && (
                       <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400">

@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent } from '@/components/ui/Card';
+import { FormattedChatMessage } from '@/components/chat/FormattedChatMessage';
 import { handleMessage } from '@/lib/ai/receptionist';
 import type { ChatMessage, ClinicContext, ReceptionistResult } from '@/lib/ai/types';
 
@@ -291,7 +292,7 @@ export const AIPlaygroundPage: React.FC = () => {
                         : 'bg-blue-600 text-white font-medium'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    <FormattedChatMessage content={m.content} />
                     <span
                       className={`text-[9px] block text-right mt-1 ${
                         isAi ? 'text-slate-400' : 'text-blue-200'
