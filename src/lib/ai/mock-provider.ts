@@ -454,6 +454,9 @@ export class MockAIProvider implements AIProvider {
     if (
       lower.includes('talk to human') ||
       lower.includes('speak to human') ||
+      lower.includes('speak to a real human') ||
+      lower.includes('talk to a real human') ||
+      lower.includes('human receptionist') ||
       lower.includes('real person') ||
       lower.includes('agent') ||
       lower.includes('receptionist se baat') ||
@@ -486,6 +489,24 @@ export class MockAIProvider implements AIProvider {
     const hasMultipleBranches = Boolean(clinic.branches && clinic.branches.length > 1);
     const hasContactDetails = Boolean(extractedPhone || (extractedName && !RESERVED_WORDS.has(extractedName.toLowerCase())));
 
+    // Check if user is asking an explicit independent inquiry (Pricing, Location, Hours)
+    // Only treat as pure independent query if they aren't explicitly requesting a booking in the same breath
+    const hasExplicitBookingWord = lower.includes('book') || lower.includes('appointment');
+    const isExplicitIndependentQuestion =
+      !hasExplicitBookingWord &&
+      (lower.includes('cost') ||
+        lower.includes('price') ||
+        lower.includes('pricing') ||
+        lower.includes('charge') ||
+        lower.includes('fee') ||
+        lower.includes('how much') ||
+        lower.includes('kitna') ||
+        lower.includes('kharcha') ||
+        lower.includes('open on') ||
+        lower.includes('timing') ||
+        lower.includes('doctor') ||
+        lower.includes('dentist'));
+
     // 2.3 CONVERSATIONAL CONTINUITY (IN ACCORDANCE WITH PREVIOUS ASSISTANT QUESTION)
     const prevQ = previousAssistantQuestion.toLowerCase();
     const isAnsweringBranchQuestion =
@@ -504,66 +525,69 @@ export class MockAIProvider implements AIProvider {
       prevQ.includes('evening') ||
       prevQ.includes('slot');
 
-    // If assistant asked for contact details or branch, and user provided them:
-    if ((isAnsweringContactQuestion && hasContactDetails) || (isAnsweringBranchQuestion && extractedBranch)) {
-      if (hasMultipleBranches && !extractedBranch) {
-        const branchList = clinic.branches!
-          .map((b, i) => `• **Option ${i + 1} (${b.name}):** ${b.address}`)
-          .join('\n');
-        const branchQuickReplies = clinic.branches!.map((b) => b.name);
+    // If user asked an independent question, let the independent handlers (pricing/hours/doctors) answer it first!
+    if (!isExplicitIndependentQuestion) {
+      // If assistant asked for contact details or branch, and user provided them:
+      if ((isAnsweringContactQuestion && hasContactDetails) || (isAnsweringBranchQuestion && extractedBranch)) {
+        if (hasMultipleBranches && !extractedBranch) {
+          const branchList = clinic.branches!
+            .map((b, i) => `• **Option ${i + 1} (${b.name}):** ${b.address}`)
+            .join('\n');
+          const branchQuickReplies = clinic.branches!.map((b) => b.name);
 
-        const actionData = {
-          leadData: {
-            name: extractedName || undefined,
-            phone: extractedPhone || undefined,
-            status: 'interested',
-          },
-          actions: [
-            {
-              type: 'collect_info',
-              payload: { missing: ['preferredBranch'] },
+          const actionData = {
+            leadData: {
+              name: extractedName || undefined,
+              phone: extractedPhone || undefined,
+              status: 'interested',
             },
-          ],
-          shouldEscalate: false,
-          suggestedQuickReplies: [...branchQuickReplies, 'Earliest Available Slot'],
-        };
+            actions: [
+              {
+                type: 'collect_info',
+                payload: { missing: ['preferredBranch'] },
+              },
+            ],
+            shouldEscalate: false,
+            suggestedQuickReplies: [...branchQuickReplies, 'Earliest Available Slot'],
+          };
 
-        return (
-          `Thank you${extractedName ? ` **${extractedName}**` : ''}! I have noted your contact details (${extractedPhone || userMessage}). 🦷\n\n` +
-          `Since we have **2 clinic locations**, which branch would be more convenient for you?\n\n` +
-          `${branchList}\n\n` +
-          `Please reply with your preferred branch location so I can reserve your doctor slot!` +
-          `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
-        );
-      }
+          return (
+            `Thank you${extractedName ? ` **${extractedName}**` : ''}! I have noted your contact details (${extractedPhone || userMessage}). 🦷\n\n` +
+            `Since we have **2 clinic locations**, which branch would be more convenient for you?\n\n` +
+            `${branchList}\n\n` +
+            `Please reply with your preferred branch location so I can reserve your doctor slot!` +
+            `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+          );
+        }
 
-      if (extractedBranch && (!extractedDate && !extractedTime)) {
-        const actionData = {
-          leadData: {
-            name: extractedName || undefined,
-            phone: extractedPhone || undefined,
-            preferredBranch: extractedBranch,
-            status: 'interested',
-          },
-          actions: [
-            {
-              type: 'collect_info',
-              payload: { missing: ['preferredDate', 'preferredTime'] },
+        if (extractedBranch && (!extractedDate && !extractedTime)) {
+          const actionData = {
+            leadData: {
+              name: extractedName || undefined,
+              phone: extractedPhone || undefined,
+              preferredBranch: extractedBranch,
+              status: 'interested',
             },
-          ],
-          shouldEscalate: false,
-          suggestedQuickReplies: ['Tomorrow Morning', 'Tomorrow Evening', 'This Weekend', 'Earliest Available'],
-        };
+            actions: [
+              {
+                type: 'collect_info',
+                payload: { missing: ['preferredDate', 'preferredTime'] },
+              },
+            ],
+            shouldEscalate: false,
+            suggestedQuickReplies: ['Tomorrow Morning', 'Tomorrow Evening', 'This Weekend', 'Earliest Available'],
+          };
 
-        return (
-          `Noted! I have selected our **${extractedBranch}** branch for you${extractedName ? `, **${extractedName}**` : ''}. 📍\n\n` +
-          `When would you like to visit us? We have open slots:\n` +
-          `• **Tomorrow Morning** (10:30 AM - 01:00 PM)\n` +
-          `• **Tomorrow Evening** (05:00 PM - 08:00 PM)\n` +
-          `• **This Saturday / Sunday**\n\n` +
-          `Please let me know which date and time suits you best.` +
-          `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
-        );
+          return (
+            `Noted! I have selected our **${extractedBranch}** branch for you${extractedName ? `, **${extractedName}**` : ''}. 📍\n\n` +
+            `When would you like to visit us? We have open slots:\n` +
+            `• **Tomorrow Morning** (10:30 AM - 01:00 PM)\n` +
+            `• **Tomorrow Evening** (05:00 PM - 08:00 PM)\n` +
+            `• **This Saturday / Sunday**\n\n` +
+            `Please let me know which date and time suits you best.` +
+            `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+          );
+        }
       }
     }
 
@@ -675,15 +699,16 @@ export class MockAIProvider implements AIProvider {
 
     // 4. APPOINTMENT BOOKING & CONTACT DETAILS FLOW
     const isBookingIntent =
-      lower.includes('book') ||
-      lower.includes('appointment') ||
-      lower.includes('slot') ||
-      lower.includes('consultation') ||
-      lower.includes('milna') ||
-      hasContactDetails ||
-      (extractedName && extractedPhone && (extractedDate || extractedTime));
+      !isExplicitIndependentQuestion &&
+      (lower.includes('book') ||
+        lower.includes('appointment') ||
+        lower.includes('slot') ||
+        lower.includes('consultation') ||
+        lower.includes('milna') ||
+        hasContactDetails ||
+        (extractedName && extractedPhone && (extractedDate || extractedTime)));
 
-    if (isBookingIntent || hasContactDetails) {
+    if (!isExplicitIndependentQuestion && (isBookingIntent || hasContactDetails)) {
       // If clinic has multiple branches and patient hasn't picked one yet, ask them to choose!
       if (hasMultipleBranches && !extractedBranch) {
         const branchList = clinic.branches!
