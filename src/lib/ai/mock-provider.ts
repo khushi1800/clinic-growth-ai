@@ -204,9 +204,13 @@ const RESERVED_WORDS = new Set([
  */
 export function extractName(text: string): string | null {
   const patterns = [
-    /(?:my name is|naam hai|mera naam)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
-    /(?:call me|patient is|patient name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
-    /(?:i am|this is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:my name is|naam hai|mera naam)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+    /(?:call me|patient is|patient name is)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+    /(?:i am|this is)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+    // Name before phone number, e.g. "Khushbu Joshi, 8511125090" or "Khushbu Joshi - 9876543210" or "Rahul Sharma 9876543210"
+    /^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*[,:\-\s]\s*(?:\+91[\-\s]?)?[6-9]\d{9}/i,
+    // Just a clean 1-to-2 word human name provided on its own line
+    /^([A-Za-z]{2,20}(?:\s+[A-Za-z]{2,20}))$/i,
   ];
 
   for (const p of patterns) {
@@ -582,16 +586,18 @@ export class MockAIProvider implements AIProvider {
       );
     }
 
-    // 4. APPOINTMENT BOOKING FLOW
+    // 4. APPOINTMENT BOOKING & CONTACT DETAILS FLOW
+    const hasContactDetails = Boolean(extractedPhone || (extractedName && !RESERVED_WORDS.has(extractedName.toLowerCase())));
     const isBookingIntent =
       lower.includes('book') ||
       lower.includes('appointment') ||
       lower.includes('slot') ||
       lower.includes('consultation') ||
       lower.includes('milna') ||
+      hasContactDetails ||
       (extractedName && extractedPhone && (extractedDate || extractedTime));
 
-    if (isBookingIntent || (extractedName && extractedPhone)) {
+    if (isBookingIntent || hasContactDetails) {
       // If clinic has multiple branches and patient hasn't picked one yet, ask them to choose!
       if (hasMultipleBranches && !extractedBranch) {
         const branchList = clinic.branches!
