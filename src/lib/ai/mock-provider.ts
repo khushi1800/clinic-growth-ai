@@ -325,13 +325,17 @@ export class MockAIProvider implements AIProvider {
     await this.delay(delayMs);
 
     const lastMessage = messages[messages.length - 1]?.content || '';
-    // Only pass user messages to history for patient entity extraction so assistant greetings like "I am Maya" are never extracted as the patient name
+    // Pass user messages to history for patient entity extraction so assistant greetings like "I am Maya" are never extracted as the patient name
     const userHistory = messages
       .filter((m) => m.role === 'user')
       .map((m) => m.content)
       .join('\n');
 
-    const result = this.processMockLogic(lastMessage, userHistory);
+    // Also inspect previous assistant prompt to understand user answers in context
+    const assistantMessages = messages.filter((m) => m.role === 'assistant');
+    const lastAssistantQuestion = assistantMessages.length > 0 ? assistantMessages[assistantMessages.length - 1].content : '';
+
+    const result = this.processMockLogic(lastMessage, userHistory, lastAssistantQuestion);
 
     return {
       content: result,
@@ -366,8 +370,9 @@ export class MockAIProvider implements AIProvider {
 
   /**
    * Core rule engine for mock scenarios.
+   * Understands messages BOTH in accordance with the preceding assistant question and independently.
    */
-  public processMockLogic(userMessage: string, history: string): string {
+  public processMockLogic(userMessage: string, history: string, previousAssistantQuestion = ''): string {
     const lower = userMessage.toLowerCase().trim();
     const clinic = this.clinicContext;
 
@@ -479,6 +484,88 @@ export class MockAIProvider implements AIProvider {
     const extractedTime = extractTimePreference(userMessage);
     const extractedBranch = extractBranch(userMessage, clinic.branches) || extractBranch(history, clinic.branches);
     const hasMultipleBranches = Boolean(clinic.branches && clinic.branches.length > 1);
+    const hasContactDetails = Boolean(extractedPhone || (extractedName && !RESERVED_WORDS.has(extractedName.toLowerCase())));
+
+    // 2.3 CONVERSATIONAL CONTINUITY (IN ACCORDANCE WITH PREVIOUS ASSISTANT QUESTION)
+    const prevQ = previousAssistantQuestion.toLowerCase();
+    const isAnsweringBranchQuestion =
+      prevQ.includes('branch') ||
+      prevQ.includes('location') ||
+      prevQ.includes('indiranagar') ||
+      prevQ.includes('koramangala');
+    const isAnsweringContactQuestion =
+      prevQ.includes('name') ||
+      prevQ.includes('phone') ||
+      prevQ.includes('contact number');
+    const isAnsweringDateTimeQuestion =
+      prevQ.includes('time') ||
+      prevQ.includes('date') ||
+      prevQ.includes('morning') ||
+      prevQ.includes('evening') ||
+      prevQ.includes('slot');
+
+    // If assistant asked for contact details or branch, and user provided them:
+    if ((isAnsweringContactQuestion && hasContactDetails) || (isAnsweringBranchQuestion && extractedBranch)) {
+      if (hasMultipleBranches && !extractedBranch) {
+        const branchList = clinic.branches!
+          .map((b, i) => `• **Option ${i + 1} (${b.name}):** ${b.address}`)
+          .join('\n');
+        const branchQuickReplies = clinic.branches!.map((b) => b.name);
+
+        const actionData = {
+          leadData: {
+            name: extractedName || undefined,
+            phone: extractedPhone || undefined,
+            status: 'interested',
+          },
+          actions: [
+            {
+              type: 'collect_info',
+              payload: { missing: ['preferredBranch'] },
+            },
+          ],
+          shouldEscalate: false,
+          suggestedQuickReplies: [...branchQuickReplies, 'Earliest Available Slot'],
+        };
+
+        return (
+          `Thank you${extractedName ? ` **${extractedName}**` : ''}! I have noted your contact details (${extractedPhone || userMessage}). 🦷\n\n` +
+          `Since we have **2 clinic locations**, which branch would be more convenient for you?\n\n` +
+          `${branchList}\n\n` +
+          `Please reply with your preferred branch location so I can reserve your doctor slot!` +
+          `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+        );
+      }
+
+      if (extractedBranch && (!extractedDate && !extractedTime)) {
+        const actionData = {
+          leadData: {
+            name: extractedName || undefined,
+            phone: extractedPhone || undefined,
+            preferredBranch: extractedBranch,
+            status: 'interested',
+          },
+          actions: [
+            {
+              type: 'collect_info',
+              payload: { missing: ['preferredDate', 'preferredTime'] },
+            },
+          ],
+          shouldEscalate: false,
+          suggestedQuickReplies: ['Tomorrow Morning', 'Tomorrow Evening', 'This Weekend', 'Earliest Available'],
+        };
+
+        return (
+          `Noted! I have selected our **${extractedBranch}** branch for you${extractedName ? `, **${extractedName}**` : ''}. 📍\n\n` +
+          `When would you like to visit us? We have open slots:\n` +
+          `• **Tomorrow Morning** (10:30 AM - 01:00 PM)\n` +
+          `• **Tomorrow Evening** (05:00 PM - 08:00 PM)\n` +
+          `• **This Saturday / Sunday**\n\n` +
+          `Please let me know which date and time suits you best.` +
+          `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+        );
+      }
+    }
 
     // 2.5 DENTAL SYMPTOM & TOOTHACHE INQUIRY (PAIN, SENSITIVITY, CAVITY)
     const isDentalSymptom =
@@ -587,7 +674,6 @@ export class MockAIProvider implements AIProvider {
     }
 
     // 4. APPOINTMENT BOOKING & CONTACT DETAILS FLOW
-    const hasContactDetails = Boolean(extractedPhone || (extractedName && !RESERVED_WORDS.has(extractedName.toLowerCase())));
     const isBookingIntent =
       lower.includes('book') ||
       lower.includes('appointment') ||
@@ -870,6 +956,24 @@ export class MockAIProvider implements AIProvider {
     }
 
     // 7. GREETING & GENERAL INQUIRY (DEFAULT)
+    // If conversation is already underway, do NOT re-introduce Maya with a generic greeting
+    if (history.trim().length > 0 || previousAssistantQuestion.trim().length > 0) {
+      const actionData = {
+        leadData: {
+          urgency: 'normal',
+        },
+        actions: [{ type: 'collect_info', payload: { intent: 'follow_up_inquiry' } }],
+        shouldEscalate: false,
+        suggestedQuickReplies: ['Book Appointment', 'Pricing & Charges', 'Clinic Timings', 'Speak with Doctor'],
+      };
+
+      return (
+        `Understood${extractedName ? `, **${extractedName}**` : ''}! 👍\n\n` +
+        `How else may I help you with your dental care today? Would you like to check doctor timings, treatment costs, or reserve an appointment slot?` +
+        `\n\n<action_data>\n${JSON.stringify(actionData, null, 2)}\n</action_data>`
+      );
+    }
+
     const actionData = {
       leadData: {
         urgency: 'normal',
