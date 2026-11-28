@@ -3,8 +3,7 @@
 -- 001_initial_schema.sql
 -- ============================================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- UUIDs use gen_random_uuid() (built into Postgres 13+; no extension needed).
 
 -- ============================================================
 -- ENUMS
@@ -57,7 +56,7 @@ CREATE TYPE review_request_status AS ENUM ('sent', 'responded', 'expired');
 -- ============================================================
 
 CREATE TABLE clinics (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name            TEXT NOT NULL,
   slug            TEXT NOT NULL UNIQUE,
   phone           TEXT,
@@ -73,7 +72,7 @@ CREATE TABLE clinics (
 );
 
 CREATE TABLE clinic_branches (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id   UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
   address     TEXT,
@@ -84,7 +83,7 @@ CREATE TABLE clinic_branches (
 );
 
 CREATE TABLE clinic_staff (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id   UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   user_id     UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   role        staff_role NOT NULL DEFAULT 'receptionist',
@@ -97,7 +96,7 @@ CREATE TABLE clinic_staff (
 );
 
 CREATE TABLE clinic_faqs (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id   UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   question    TEXT NOT NULL,
   answer      TEXT NOT NULL,
@@ -113,7 +112,7 @@ CREATE TABLE clinic_faqs (
 -- ============================================================
 
 CREATE TABLE leads (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id    UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   name         TEXT NOT NULL,
   phone        TEXT,
@@ -127,7 +126,7 @@ CREATE TABLE leads (
 );
 
 CREATE TABLE lead_activities (
-  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lead_id        UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
   activity_type  TEXT NOT NULL,
   description    TEXT,
@@ -140,7 +139,7 @@ CREATE TABLE lead_activities (
 -- ============================================================
 
 CREATE TABLE appointments (
-  id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id          UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   lead_id            UUID REFERENCES leads(id) ON DELETE SET NULL,
   branch_id          UUID REFERENCES clinic_branches(id) ON DELETE SET NULL,
@@ -155,7 +154,7 @@ CREATE TABLE appointments (
 );
 
 CREATE TABLE appointment_slots (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id    UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   branch_id    UUID REFERENCES clinic_branches(id) ON DELETE CASCADE,
   doctor_id    UUID REFERENCES clinic_staff(id) ON DELETE CASCADE,
@@ -171,7 +170,7 @@ CREATE TABLE appointment_slots (
 -- ============================================================
 
 CREATE TABLE conversations (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id   UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   lead_id     UUID REFERENCES leads(id) ON DELETE SET NULL,
   channel     conversation_channel NOT NULL DEFAULT 'web_chat',
@@ -181,7 +180,7 @@ CREATE TABLE conversations (
 );
 
 CREATE TABLE messages (
-  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id  UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   role             message_role NOT NULL,
   content          TEXT NOT NULL,
@@ -194,7 +193,7 @@ CREATE TABLE messages (
 -- ============================================================
 
 CREATE TABLE follow_up_rules (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id         UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   name              TEXT NOT NULL,
   trigger_event     TEXT NOT NULL,
@@ -208,7 +207,7 @@ CREATE TABLE follow_up_rules (
 );
 
 CREATE TABLE follow_up_tasks (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id       UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   lead_id         UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
   rule_id         UUID REFERENCES follow_up_rules(id) ON DELETE SET NULL,
@@ -225,7 +224,7 @@ CREATE TABLE follow_up_tasks (
 -- ============================================================
 
 CREATE TABLE review_requests (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id    UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   lead_id      UUID REFERENCES leads(id) ON DELETE SET NULL,
   sent_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -241,7 +240,7 @@ CREATE TABLE review_requests (
 -- ============================================================
 
 CREATE TABLE prospects (
-  id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_name          TEXT NOT NULL,
   location             TEXT,
   website              TEXT,
@@ -258,7 +257,7 @@ CREATE TABLE prospects (
 );
 
 CREATE TABLE prospect_activities (
-  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   prospect_id    UUID NOT NULL REFERENCES prospects(id) ON DELETE CASCADE,
   activity_type  TEXT NOT NULL,
   description    TEXT,
@@ -266,7 +265,7 @@ CREATE TABLE prospect_activities (
 );
 
 CREATE TABLE customers (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id       UUID REFERENCES clinics(id) ON DELETE SET NULL,
   prospect_id     UUID REFERENCES prospects(id) ON DELETE SET NULL,
   plan            customer_plan NOT NULL DEFAULT 'standard',
@@ -282,7 +281,7 @@ CREATE TABLE customers (
 );
 
 CREATE TABLE finance_records (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type         finance_type NOT NULL,
   amount       DECIMAL(12, 2) NOT NULL,
   description  TEXT,
@@ -292,7 +291,7 @@ CREATE TABLE finance_records (
 );
 
 CREATE TABLE audit_log (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id    UUID,
   user_id      UUID,
   action       TEXT NOT NULL,
@@ -314,6 +313,11 @@ CREATE INDEX idx_clinics_slug ON clinics(slug);
 -- Staff
 CREATE INDEX idx_clinic_staff_clinic_id ON clinic_staff(clinic_id);
 CREATE INDEX idx_clinic_staff_user_id ON clinic_staff(user_id);
+
+-- One active clinic per user (the RLS helper functions rely on this).
+CREATE UNIQUE INDEX uq_clinic_staff_active_user
+  ON clinic_staff(user_id)
+  WHERE user_id IS NOT NULL AND is_active;
 
 -- Leads
 CREATE INDEX idx_leads_clinic_id ON leads(clinic_id);
@@ -404,3 +408,14 @@ CREATE TRIGGER trg_follow_up_rules_updated_at
 CREATE TRIGGER trg_customers_updated_at
   BEFORE UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================
+-- PLATFORM ADMINS (SaaS owner accounts)
+-- ============================================================
+-- Source of truth for platform-admin rights. Not client-readable or writable
+-- (RLS enabled with no policies in 002; privileges revoked). Rows are inserted
+-- manually by the Founder in the Supabase SQL editor. Never use user metadata.
+CREATE TABLE platform_admins (
+  user_id     UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

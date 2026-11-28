@@ -56,7 +56,7 @@ export interface AIProvider {
    - Direct REST integration with Google Gemini (`gemini-1.5-flash`).
    - Built with native browser/Node `fetch` — **zero third-party SDK dependencies**.
    - Streams responses in real-time using Server-Sent Events (SSE).
-   - Reads `VITE_GEMINI_API_KEY` from environment variables without exposing sensitive secrets in client bundles.
+   - **CORRECTION (2026-11-28):** a `VITE_`-prefixed variable is embedded in the public browser bundle, so the key is NOT protected today. Milestone 1 (M1-01) removes the browser path; from Milestone 3 Gemini is called only from a server-side Edge Function.
 
 2. **`MockAIProvider` (Default / Demo):**
    - Enabled by default when no API key is configured.

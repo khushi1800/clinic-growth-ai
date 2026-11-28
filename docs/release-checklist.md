@@ -51,7 +51,7 @@
 5. (Optional) Run `src/api/seed.ts` or execute the seed SQL block if demo data is desired for training staff.
 
 ### Phase 3: Environment Variable Configuration
-Copy `.env.example` to `.env`:
+Copy `.env.example` to `.env` (**note: `.env.example` is created by task M1-01; it contains public variables only**):
 ```bash
 cp .env.example .env
 ```
@@ -60,6 +60,7 @@ Populate the production values:
 # Supabase Cloud Project Settings
 VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<your-anon-public-key>
+# SERVER-SIDE ONLY (Edge Function secret / local .env). NEVER prefix with VITE_, never commit, never paste in chat:
 SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key-admin-only>
 
 # AI Engine
@@ -93,7 +94,7 @@ NODE_ENV=production
    - On Vercel / Cloudflare Pages: One-click instant rollback to the previous production deployment commit.
    - On custom Nginx/S3 host: Retain the previous build directory (`dist_previous/`) and switch symlink.
 2. **Database Schema Rollback:**
-   - Supabase automatically captures daily point-in-time snapshots on free and paid tiers.
+   - **UNVERIFIED:** backup/point-in-time-recovery availability depends on the Supabase plan; confirm against current Supabase terms and run a restore drill (Milestone 5) before relying on it.
    - Individual migration undo scripts should be tested against staging before schema modifications.
 3. **Emergency Kill-Switch for AI Receptionist:**
    - Clinic owners can immediately toggle `ai_receptionist_enabled: false` in `ClinicSettingsPage`.

@@ -82,7 +82,7 @@ Before routing live patient traffic, the Implementation Specialist runs 10 bench
 - [ ] WhatsApp reminder template delivery.
 
 #### Step 2: Channel Activation
-- **WhatsApp Channel:** Pair clinic's official WhatsApp Business number via Cloud API or QR-code integration.
+- **WhatsApp Channel:** Pair clinic's official WhatsApp Business number via the approved BSP. **Do not use unofficial QR-code/WhatsApp-Web automation: it violates WhatsApp terms and risks the number being banned.**
 - **Telephony Channel:** Set up conditional call-forwarding (*"Forward on busy / unanswered after 4 rings"* to Clinic Growth AI dedicated virtual number).
 - **Web Widget:** Embed AI Chat widget script on clinic's homepage.
 

@@ -37,7 +37,7 @@ MONTH 6: 25+ Active Paying Clinics & Expansion Capital Decision (26+ Clinics Tot
 - **Pricing:** Setup fee waived (₹9,999 value); 50% discount at ₹7,499/mo for first 60 days.
 - **Key Objectives:**
   - Complete live deployment of the core web app and Supabase backend.
-  - Finalize WhatsApp Cloud API direct integration for automated incoming call fallbacks.
+  - Finalize WhatsApp integration through an approved Indian BSP (Gupshup, AiSensy, Wati or Interakt) for automated incoming call fallbacks. *(Decision of record, 2026-11-28: BSP, not direct Cloud API; see `engineering-roadmap.md`.)*
   - Conduct hands-on onboarding for first 3 clinics using `customer-onboarding.md`.
   - Achieve 100% resolution of Day 1–7 technical bugs.
 - **Deliverables:**
