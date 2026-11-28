@@ -4,6 +4,7 @@
 // ============================================================
 
 import { supabase } from '../lib/supabase/client';
+import type { Membership } from '../auth/useAuth';
 import type { ApiResult, ApiListResult } from '../types/api';
 import type {
   Clinic, ClinicInsert, ClinicUpdate,
@@ -276,5 +277,96 @@ export async function deleteFaq(faqId: string): Promise<ApiResult<null>> {
     return { data: null, error: null };
   } catch (err) {
     return { data: null, error: { message: String(err) } };
+  }
+}
+
+// ---- Auth Membership & Clinic Onboarding RPCs ---------------
+
+export interface CreateClinicWithOwnerInput {
+  name: string;
+  phone?: string;
+  city?: string;
+}
+
+const KNOWN_CREATE_CLINIC_ERRORS = ['not_authenticated', 'already_member', 'invalid_name'] as const;
+
+function mapCreateClinicErrorCode(message: string, fallbackCode?: string): string | undefined {
+  for (const code of KNOWN_CREATE_CLINIC_ERRORS) {
+    if (message === code || message.includes(code)) {
+      return code;
+    }
+  }
+  return fallbackCode;
+}
+
+/**
+ * Returns the caller's own active membership row from clinic_staff, or null if none.
+ */
+export async function getMyMembership(userId?: string): Promise<ApiResult<Membership>> {
+  try {
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) return { data: null, error: { message: userError.message } };
+      if (!userData.user) return { data: null, error: null };
+      targetUserId = userData.user.id;
+    }
+
+    const { data, error } = await supabase
+      .from('clinic_staff')
+      .select('id, clinic_id, role')
+      .eq('user_id', targetUserId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) return { data: null, error: { message: error.message, code: error.code } };
+    if (!data) return { data: null, error: null };
+
+    return {
+      data: {
+        clinicId: data.clinic_id,
+        staffId: data.id,
+        role: data.role as Membership['role'],
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: { message: String(err) } };
+  }
+}
+
+/**
+ * Creates a new clinic with the current authenticated user as owner via SECURITY DEFINER RPC.
+ */
+export async function createClinicWithOwner(
+  input: CreateClinicWithOwnerInput
+): Promise<ApiResult<string>> {
+  try {
+    const { data, error } = await supabase.rpc('create_clinic_with_owner', {
+      p_name: input.name,
+      p_phone: input.phone ?? null,
+      p_city: input.city ?? null,
+    });
+
+    if (error) {
+      return {
+        data: null,
+        error: {
+          message: error.message,
+          code: mapCreateClinicErrorCode(error.message, error.code),
+        },
+      };
+    }
+
+    return { data: data as string, error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      data: null,
+      error: {
+        message,
+        code: mapCreateClinicErrorCode(message),
+      },
+    };
   }
 }
