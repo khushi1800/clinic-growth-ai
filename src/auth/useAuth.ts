@@ -15,6 +15,7 @@ export interface AuthState {
   status: AuthStatus;
   user: User | null;
   membership: Membership | null;
+  membershipError: boolean;
   isPlatformAdmin: boolean;
   signIn(p: SignInParams): Promise<ApiResult<Session>>;
   signUp(p: SignUpParams): Promise<ApiResult<User>>;

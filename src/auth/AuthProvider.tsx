@@ -17,6 +17,7 @@ interface AuthInternalState {
   status: AuthStatus;
   user: User | null;
   membership: Membership | null;
+  membershipError: boolean;
   isPlatformAdmin: boolean;
 }
 
@@ -24,8 +25,14 @@ const UNAUTHENTICATED_STATE: AuthInternalState = {
   status: 'unauthenticated',
   user: null,
   membership: null,
+  membershipError: false,
   isPlatformAdmin: false,
 };
+
+interface MembershipFetchResult {
+  membership: Membership | null;
+  error: boolean;
+}
 
 async function fetchIsPlatformAdmin(): Promise<boolean> {
   try {
@@ -37,13 +44,13 @@ async function fetchIsPlatformAdmin(): Promise<boolean> {
   }
 }
 
-async function fetchMembershipSafe(userId: string): Promise<Membership | null> {
+async function fetchMembershipSafe(userId: string): Promise<MembershipFetchResult> {
   try {
     const result = await getMyMembership(userId);
-    if (result.error) return null;
-    return result.data;
+    if (result.error) return { membership: null, error: true };
+    return { membership: result.data, error: false };
   } catch {
-    return null;
+    return { membership: null, error: true };
   }
 }
 
@@ -52,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     status: 'loading',
     user: null,
     membership: null,
+    membershipError: false,
     isPlatformAdmin: false,
   });
 
@@ -68,18 +76,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const [membership, isPlatformAdmin] = await Promise.all([
+    const [membershipResult, isPlatformAdmin] = await Promise.all([
       fetchMembershipSafe(session.user.id),
       fetchIsPlatformAdmin(),
     ]);
 
     if (mountedRef.current && requestIdRef.current === reqId) {
-      setState({
+      setState((prev) => ({
         status: 'authenticated',
         user: session.user,
-        membership,
+        // Preserve known membership for the same user on transient fetch errors.
+        membership: membershipResult.error
+          ? prev.user?.id === session.user.id
+            ? prev.membership
+            : null
+          : membershipResult.membership,
+        membershipError: membershipResult.error,
         isPlatformAdmin,
-      });
+      }));
     }
   }, []);
 
@@ -96,18 +110,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const [membership, isPlatformAdmin] = await Promise.all([
+    const [membershipResult, isPlatformAdmin] = await Promise.all([
       fetchMembershipSafe(session.user.id),
       fetchIsPlatformAdmin(),
     ]);
 
     if (mountedRef.current && requestIdRef.current === reqId) {
-      setState({
+      setState((prev) => ({
         status: 'authenticated',
         user: session.user,
-        membership,
+        // Preserve known membership for the same user on transient fetch errors.
+        membership: membershipResult.error
+          ? prev.user?.id === session.user.id
+            ? prev.membership
+            : null
+          : membershipResult.membership,
+        membershipError: membershipResult.error,
         isPlatformAdmin,
-      });
+      }));
     }
   }, []);
 
@@ -159,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       status: state.status,
       user: state.user,
       membership: state.membership,
+      membershipError: state.membershipError,
       isPlatformAdmin: state.isPlatformAdmin,
       signIn,
       signUp,

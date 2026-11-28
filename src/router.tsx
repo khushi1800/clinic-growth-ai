@@ -1,5 +1,14 @@
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
+
+// Auth Guards
+import {
+  PublicOnly,
+  RequireAuth,
+  RequireOnboarding,
+  RequirePlatformAdmin,
+  RequireRole,
+} from '@/auth/guards';
 
 // Layouts
 import { MarketingLayout } from '@/layouts/MarketingLayout';
@@ -38,7 +47,7 @@ import { ProspectsPage } from '@/pages/admin/ProspectsPage';
 import { CustomersPage } from '@/pages/admin/CustomersPage';
 import { FinancePage } from '@/pages/admin/FinancePage';
 
-export const router = createBrowserRouter([
+export const routes: RouteObject[] = [
   // Public Marketing Routes
   {
     path: '/',
@@ -54,15 +63,36 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: 'login', element: <LoginPage /> },
-      { path: 'signup', element: <SignupPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      {
+        element: <PublicOnly />,
+        children: [
+          { path: 'login', element: <LoginPage /> },
+          { path: 'signup', element: <SignupPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
+        ],
+      },
+      // Placeholder route for M1-09 reset password flow
+      { path: 'reset-password', element: <div>Reset Password</div> },
     ],
+  },
+
+  // Onboarding Route (placeholder page for M1-10)
+  {
+    path: 'onboarding',
+    element: (
+      <RequireOnboarding>
+        <div>Clinic Onboarding</div>
+      </RequireOnboarding>
+    ),
   },
 
   // Clinic Dashboard Routes
   {
-    element: <DashboardLayout />,
+    element: (
+      <RequireAuth>
+        <DashboardLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: 'dashboard', element: <OverviewPage /> },
       { path: 'leads', element: <LeadsPage /> },
@@ -71,24 +101,33 @@ export const router = createBrowserRouter([
       { path: 'appointments/:id', element: <AppointmentDetailPage /> },
       { path: 'conversations', element: <ConversationsPage /> },
       { path: 'ai-playground', element: <AIPlaygroundPage /> },
-      { path: 'settings/clinic', element: <ClinicSettingsPage /> },
-      { path: 'settings/staff', element: <StaffPage /> },
-      { path: 'settings/faq', element: <FAQPage /> },
-      { path: 'settings/follow-ups', element: <FollowUpRulesPage /> },
+      {
+        element: <RequireRole roles={['owner', 'admin']} />,
+        children: [
+          { path: 'settings/clinic', element: <ClinicSettingsPage /> },
+          { path: 'settings/staff', element: <StaffPage /> },
+          { path: 'settings/faq', element: <FAQPage /> },
+          { path: 'settings/follow-ups', element: <FollowUpRulesPage /> },
+          { path: 'settings/faqs', element: <Navigate to="/settings/faq" replace /> },
+          { path: 'settings/followups', element: <Navigate to="/settings/follow-ups" replace /> },
+        ],
+      },
       // Direct Aliases for intuitive URL navigation
       { path: 'dashboard/ai-playground', element: <AIPlaygroundPage /> },
       { path: 'dashboard/conversations', element: <ConversationsPage /> },
       { path: 'dashboard/leads', element: <Navigate to="/leads" replace /> },
       { path: 'dashboard/appointments', element: <Navigate to="/appointments" replace /> },
-      { path: 'settings/faqs', element: <Navigate to="/settings/faq" replace /> },
-      { path: 'settings/followups', element: <Navigate to="/settings/follow-ups" replace /> },
     ],
   },
 
-  // Owner Admin Routes
+  // Platform Admin Routes
   {
     path: 'admin',
-    element: <AdminLayout />,
+    element: (
+      <RequirePlatformAdmin>
+        <AdminLayout />
+      </RequirePlatformAdmin>
+    ),
     children: [
       { index: true, element: <AdminOverviewPage /> },
       { path: 'prospects', element: <ProspectsPage /> },
@@ -102,4 +141,6 @@ export const router = createBrowserRouter([
     path: '*',
     element: <Navigate to="/" replace />,
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);
