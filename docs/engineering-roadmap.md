@@ -1,6 +1,6 @@
 # Clinic Growth AI — Engineering Roadmap & Milestone 1 Execution Package
 
-**Status:** PROPOSED — awaiting Founder approval. No implementation has started.
+**Status:** M1 approved by the Founder; per-task status lives in [backlog.md](backlog.md) (this file holds definitions and contracts only).
 **Owner:** CTO (Claude). **Implementation:** Google Antigravity / Gemini. **Approver:** Founder.
 **Date:** 2026-11-27
 
