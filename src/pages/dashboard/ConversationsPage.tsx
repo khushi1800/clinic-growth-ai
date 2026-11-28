@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import {
-  MessageSquare,
-  Search,
   AlertTriangle,
   Bot,
   Send,
   User,
-  Clock,
-  Sparkles,
   Phone,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { FormattedChatMessage } from '@/components/chat/FormattedChatMessage';
 import { useMockData } from '@/hooks/useMockData';

@@ -15,17 +15,17 @@ class OptOutRegistry {
   private optedOutSet = new Set<string>();
 
   public optOut(recipient: string): void {
-    const clean = recipient.replace(/[\s\-\+]/g, '').toLowerCase();
+    const clean = recipient.replace(/[-\s+]/g, '').toLowerCase();
     this.optedOutSet.add(clean);
   }
 
   public optIn(recipient: string): void {
-    const clean = recipient.replace(/[\s\-\+]/g, '').toLowerCase();
+    const clean = recipient.replace(/[-\s+]/g, '').toLowerCase();
     this.optedOutSet.delete(clean);
   }
 
   public isOptedOut(recipient: string): boolean {
-    const clean = recipient.replace(/[\s\-\+]/g, '').toLowerCase();
+    const clean = recipient.replace(/[-\s+]/g, '').toLowerCase();
     return this.optedOutSet.has(clean);
   }
 

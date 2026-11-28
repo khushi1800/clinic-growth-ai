@@ -3,14 +3,10 @@ import {
   Bot,
   Send,
   User,
-  Sparkles,
   AlertTriangle,
   RotateCcw,
   Zap,
   CheckCircle2,
-  Calendar,
-  Phone,
-  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';

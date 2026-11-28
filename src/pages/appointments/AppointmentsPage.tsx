@@ -5,10 +5,6 @@ import {
   Clock,
   User,
   Plus,
-  Filter,
-  CheckCircle,
-  MapPin,
-  Stethoscope,
   Phone,
   CheckCircle2,
 } from 'lucide-react';
@@ -23,7 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useMockData } from '@/hooks/useMockData';
 
 export const AppointmentsPage: React.FC = () => {
-  const { appointments, addAppointment, staff, branches } = useMockData();
+  const { appointments, addAppointment } = useMockData();
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [doctorFilter, setDoctorFilter] = useState('ALL');
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
@@ -43,7 +39,7 @@ export const AppointmentsPage: React.FC = () => {
 
   const [bookingErrors, setBookingErrors] = useState<Record<string, string>>({});
 
-  const updateBookingField = (field: string, value: any) => {
+  const updateBookingField = (field: string, value: unknown) => {
     setBookingForm(prev => ({ ...prev, [field]: value }));
     if (bookingErrors[field]) {
       setBookingErrors(prev => {

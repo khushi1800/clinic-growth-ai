@@ -4,23 +4,19 @@ import {
   ArrowLeft,
   Phone,
   Mail,
-  Calendar,
   Clock,
   Sparkles,
-  UserCheck,
-  CheckCircle2,
   CalendarPlus,
-  Send,
-  AlertCircle,
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge, type BadgeVariant } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useMockData } from '@/hooks/useMockData';
+import type { LeadStatus } from '@/types/enums';
 
 export const LeadDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +39,7 @@ export const LeadDetailPage: React.FC = () => {
     branch: 'Indiranagar Main Clinic',
   });
 
-  const handleStatusChange = (newStat: any) => {
+  const handleStatusChange = (newStat: LeadStatus) => {
     setCurrentStatus(newStat);
     updateLeadStatus(lead.id, newStat);
   };
@@ -119,7 +115,7 @@ export const LeadDetailPage: React.FC = () => {
                 <label className="text-xs font-semibold uppercase text-slate-500">Pipeline Status</label>
                 <select
                   value={currentStatus}
-                  onChange={e => handleStatusChange(e.target.value)}
+                  onChange={e => handleStatusChange(e.target.value as LeadStatus)}
                   className="mt-1 w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white font-semibold focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="new">New Lead</option>

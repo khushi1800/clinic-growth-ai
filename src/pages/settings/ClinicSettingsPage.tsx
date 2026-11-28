@@ -7,12 +7,7 @@ import {
   Mail,
   Globe,
   Save,
-  Plus,
   CheckCircle2,
-  Calendar,
-  Sparkles,
-  ToggleLeft,
-  ToggleRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -63,7 +58,7 @@ export const ClinicSettingsPage: React.FC = () => {
     if (clinic.business_hours && typeof clinic.business_hours === 'object') {
       const merged: Record<string, DaySchedule> = {};
       Object.keys(DEFAULT_HOURS).forEach(day => {
-        const val = (clinic.business_hours as any)[day];
+        const val = (clinic.business_hours as Record<string, Partial<DaySchedule> | undefined>)[day];
         if (val && typeof val === 'object') {
           merged[day] = {
             open: val.open || '09:00',

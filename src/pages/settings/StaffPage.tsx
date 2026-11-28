@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { UserCheck, Plus, Trash2, Mail, Phone, Shield, Stethoscope } from 'lucide-react';
+import { UserCheck, Plus, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { useMockData } from '@/hooks/useMockData';

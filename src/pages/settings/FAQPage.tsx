@@ -3,14 +3,12 @@ import {
   HelpCircle,
   Plus,
   Trash2,
-  Sparkles,
   Search,
-  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useMockData } from '@/hooks/useMockData';

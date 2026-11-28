@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import {
-  TrendingUp,
-  TrendingDown,
   Plus,
-  DollarSign,
   ArrowUpRight,
   ArrowDownLeft,
-  Calendar,
-  CreditCard,
   Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';

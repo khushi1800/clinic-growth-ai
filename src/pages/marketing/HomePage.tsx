@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles,
-  PhoneCall,
   CalendarCheck,
   MessageSquareCode,
   TrendingUp,
@@ -10,7 +9,6 @@ import {
   Clock,
   ArrowRight,
   CheckCircle2,
-  Users,
   Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';

@@ -106,7 +106,7 @@ export type ActionType =
 
 export interface Action {
   type: ActionType;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   reason?: string;
 }
 

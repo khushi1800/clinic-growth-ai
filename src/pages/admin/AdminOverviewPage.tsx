@@ -5,11 +5,9 @@ import {
   ShieldCheck,
   Users,
   CreditCard,
-  Building,
   ArrowRight,
   Sparkles,
   AlertCircle,
-  Calendar,
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -19,7 +17,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@
 import { useMockData } from '@/hooks/useMockData';
 
 export const AdminOverviewPage: React.FC = () => {
-  const { customers, prospects, financeRecords } = useMockData();
+  const { customers, prospects } = useMockData();
 
   // Compute MRR from active customers
   const mrr = customers

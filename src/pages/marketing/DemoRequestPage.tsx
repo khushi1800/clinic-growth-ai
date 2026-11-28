@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
   Clock,
@@ -10,9 +10,7 @@ import {
   Phone,
   Mail,
   ArrowRight,
-  ExternalLink,
   MessageSquare,
-  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,7 +19,6 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 export const DemoRequestPage: React.FC = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     clinicName: '',
     contactPerson: '',

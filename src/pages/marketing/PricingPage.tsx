@@ -3,16 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   Check,
   X,
-  HelpCircle,
   ChevronDown,
   Sparkles,
-  ShieldCheck,
-  ArrowRight,
-  PhoneCall,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 
 export const PricingPage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);

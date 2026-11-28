@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { Menu, X, ArrowRight, ShieldCheck, HeartHandshake } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
 export const MarketingLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
 
   const navLinks = [
     { name: 'Features', href: '/#features' },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Plus, Zap, MessageSquare, CheckCircle2, Power } from 'lucide-react';
+import { Plus, Power } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useMockData } from '@/hooks/useMockData';
+import type { FollowUpRule } from '@/types/database';
+import type { ConversationChannel } from '@/types/enums';
 
 export const FollowUpRulesPage: React.FC = () => {
   const { followUpRules } = useMockData();
@@ -21,7 +23,7 @@ export const FollowUpRulesPage: React.FC = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: unknown) => {
     setNewRule(prev => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
       setFormErrors(prev => {
@@ -59,8 +61,9 @@ export const FollowUpRulesPage: React.FC = () => {
   const handleCreateRule = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    const ruleObj: any = {
+    const ruleObj: FollowUpRule = {
       ...newRule,
+      channel: newRule.channel as ConversationChannel,
       id: `rule-${Date.now()}`,
       clinic_id: 'clinic-demo-01',
       is_active: true,

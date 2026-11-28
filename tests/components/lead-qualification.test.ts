@@ -6,6 +6,7 @@ import {
   parseActionData,
 } from '../../src/lib/ai/receptionist.js'
 import type { ClinicContext, ChatMessage, AppointmentRequest } from '../../src/lib/ai/types.js'
+import type { AIProvider } from '../../src/lib/ai/provider.js'
 
 const mockClinic: ClinicContext = {
   clinicId: 'clinic-qual-1',
@@ -33,7 +34,7 @@ test('Lead Qualification: AI Evaluation & Heuristic Fallback', async () => {
   }
 
   // Low intent (no phone, no date)
-  const lowResult = await qualifyLead(chatHistory, mockClinic, offlineProvider as any)
+  const lowResult = await qualifyLead(chatHistory, mockClinic, offlineProvider as unknown as AIProvider)
   assert.equal(lowResult.score, 30)
   assert.equal(lowResult.intent, 'routine_inquiry')
 
@@ -41,7 +42,7 @@ test('Lead Qualification: AI Evaluation & Heuristic Fallback', async () => {
   const medHistory: ChatMessage[] = [
     { id: '1', role: 'user', content: 'My phone is 9876543210', timestamp: new Date().toISOString() },
   ]
-  const medResult = await qualifyLead(medHistory, mockClinic, offlineProvider as any)
+  const medResult = await qualifyLead(medHistory, mockClinic, offlineProvider as unknown as AIProvider)
   assert.equal(medResult.score, 65)
   assert.equal(medResult.intent, 'interested')
 
@@ -49,7 +50,7 @@ test('Lead Qualification: AI Evaluation & Heuristic Fallback', async () => {
   const highHistory: ChatMessage[] = [
     { id: '1', role: 'user', content: 'Book me for tomorrow morning. Phone 9876543210', timestamp: new Date().toISOString() },
   ]
-  const highResult = await qualifyLead(highHistory, mockClinic, offlineProvider as any)
+  const highResult = await qualifyLead(highHistory, mockClinic, offlineProvider as unknown as AIProvider)
   assert.equal(highResult.score, 90)
   assert.equal(highResult.intent, 'high_intent_booking')
 })
@@ -70,7 +71,7 @@ test('Appointment Confirmation Generation: Formats structured template on offlin
     },
   }
 
-  const message = await generateAppointmentConfirmationMessage(request, mockClinic, offlineProvider as any)
+  const message = await generateAppointmentConfirmationMessage(request, mockClinic, offlineProvider as unknown as AIProvider)
   assert.ok(message.includes('Appointment Confirmed'), 'Header confirmed')
   assert.ok(message.includes('Devika Nair'), 'Includes patient name')
   assert.ok(message.includes('2026-11-25'), 'Includes date')

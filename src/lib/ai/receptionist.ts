@@ -186,7 +186,7 @@ export async function handleMessage(input: {
       maxTokens: 1024,
     });
     rawContent = aiResponse.content;
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[AI Receptionist] Provider error:', err);
     // Graceful fallback to MockAIProvider if network or API key fails
     const fallbackProvider = getAIProvider({ type: 'mock', clinicContext });
