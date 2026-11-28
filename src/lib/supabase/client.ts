@@ -33,7 +33,7 @@ class HeadlessMockWebSocket {
 }
 
 const isBrowser = typeof window !== 'undefined';
-const hasNativeWebSocket = typeof WebSocket !== 'undefined' || typeof (globalThis as any).WebSocket !== 'undefined';
+const hasNativeWebSocket = typeof WebSocket !== 'undefined' || typeof (globalThis as { WebSocket?: unknown }).WebSocket !== 'undefined';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -44,7 +44,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   ...(!isBrowser && !hasNativeWebSocket
     ? {
         realtime: {
-          transport: HeadlessMockWebSocket as any,
+          transport: HeadlessMockWebSocket as unknown as typeof WebSocket,
         },
       }
     : {}),

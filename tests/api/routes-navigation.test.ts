@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 // Provide minimal headless DOM primitives for react-router in Node test runner
 if (typeof globalThis.window === 'undefined') {
-  ;(globalThis as any).window = {
+  ;(globalThis as { window?: unknown }).window = {
     addEventListener() {},
     removeEventListener() {},
     location: { pathname: '/' },
@@ -11,9 +11,14 @@ if (typeof globalThis.window === 'undefined') {
   }
 }
 if (typeof globalThis.document === 'undefined') {
-  ;(globalThis as any).document = {
-    defaultView: (globalThis as any).window,
+  ;(globalThis as { document?: unknown }).document = {
+    defaultView: (globalThis as { window?: unknown }).window,
   }
+}
+
+interface RouteNode {
+  path?: string
+  children?: RouteNode[]
 }
 
 test('Application Routes: All core navigation paths exist in the router tree', async () => {
@@ -22,7 +27,7 @@ test('Application Routes: All core navigation paths exist in the router tree', a
 
   // Traverse all route paths
   const routePaths: string[] = []
-  function traverse(routes: any[], parent = '') {
+  function traverse(routes: RouteNode[], parent = '') {
     for (const r of routes) {
       const full = r.path !== undefined ? (parent ? `${parent}/${r.path}` : r.path) : parent
       if (r.path !== undefined) routePaths.push(r.path)

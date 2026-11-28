@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEMO_LEADS, DEMO_CLINIC } from '../../src/hooks/useMockData.js'
+import { DEMO_LEADS } from '../../src/hooks/useMockData.js'
 import type { Lead } from '../../src/types/database.js'
 
 test('Leads Lifecycle Workflow: Validates all stage transitions', () => {

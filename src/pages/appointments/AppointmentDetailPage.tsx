@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
-  Clock,
   User,
   CheckCircle2,
   XCircle,
   RefreshCw,
-  Phone,
-  MapPin,
-  Stethoscope,
-  Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge, type BadgeVariant } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { useMockData } from '@/hooks/useMockData';
+import type { AppointmentStatus } from '@/types/enums';
 
 export const AppointmentDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { appointments, updateAppointmentStatus } = useMockData();
 
   const appointment = appointments.find(a => a.id === id) || appointments[0];
@@ -33,7 +28,7 @@ export const AppointmentDetailPage: React.FC = () => {
     time: appointment.appointment_time,
   });
 
-  const handleAction = (newStatus: any) => {
+  const handleAction = (newStatus: AppointmentStatus) => {
     setStatus(newStatus);
     updateAppointmentStatus(appointment.id, newStatus);
   };

@@ -14,6 +14,7 @@ import type {
   Customer,
   FinanceRecord,
 } from '@/types/database';
+import type { LeadStatus, AppointmentStatus } from '@/types/enums';
 
 export const DEMO_CLINIC: Clinic = {
   id: 'clinic-demo-01',
@@ -811,17 +812,22 @@ export const DEMO_FINANCE_RECORDS: FinanceRecord[] = [
   },
 ];
 
+type MockLead = (typeof DEMO_LEADS)[number];
+type MockAppointment = (typeof DEMO_APPOINTMENTS)[number];
+type MockConversation = (typeof DEMO_CONVERSATIONS)[number];
+type MockCustomer = (typeof DEMO_ADMIN_CUSTOMERS)[number];
+
 interface MockStoreState {
   clinic: Clinic;
   branches: ClinicBranch[];
   staff: ClinicStaff[];
   faqs: ClinicFaq[];
-  leads: any[];
-  appointments: any[];
-  conversations: any[];
+  leads: MockLead[];
+  appointments: MockAppointment[];
+  conversations: MockConversation[];
   followUpRules: FollowUpRule[];
   prospects: Prospect[];
-  customers: any[];
+  customers: MockCustomer[];
   financeRecords: FinanceRecord[];
 }
 
@@ -895,7 +901,7 @@ export function useMockData() {
     updateStore(prev => ({ ...prev, clinic }));
   };
 
-  const updateBusinessHours = (businessHours: any) => {
+  const updateBusinessHours = (businessHours: Clinic['business_hours']) => {
     updateStore(prev => ({
       ...prev,
       clinic: {
@@ -907,7 +913,7 @@ export function useMockData() {
   };
 
   const addLead = (lead: Partial<Lead>) => {
-    const newLead: any = {
+    const newLead: MockLead = {
       id: `lead-${Date.now()}`,
       clinic_id: store.clinic.id,
       name: lead.name || 'Anonymous Patient',
@@ -929,7 +935,7 @@ export function useMockData() {
     return newLead;
   };
 
-  const updateLeadStatus = (leadId: string, status: any) => {
+  const updateLeadStatus = (leadId: string, status: LeadStatus) => {
     updateStore(prev => ({
       ...prev,
       leads: prev.leads.map(l =>
@@ -938,7 +944,7 @@ export function useMockData() {
     }));
   };
 
-  const addAppointment = (apt: Partial<any>) => {
+  const addAppointment = (apt: Partial<MockAppointment>) => {
     const newApt = {
       id: `apt-${Date.now()}`,
       clinic_id: store.clinic.id,
@@ -965,7 +971,7 @@ export function useMockData() {
     return newApt;
   };
 
-  const updateAppointmentStatus = (aptId: string, status: any) => {
+  const updateAppointmentStatus = (aptId: string, status: AppointmentStatus) => {
     updateStore(prev => ({
       ...prev,
       appointments: prev.appointments.map(a =>
@@ -1037,7 +1043,9 @@ export function useMockData() {
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         localStorage.removeItem(STORAGE_KEY);
-      } catch (e) {}
+      } catch {
+        // Ignore storage access errors in restricted environments
+      }
     }
     updateStore(() => defaultState);
   };

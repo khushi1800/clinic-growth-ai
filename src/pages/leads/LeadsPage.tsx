@@ -2,14 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
-  Filter,
   Plus,
   Phone,
-  Mail,
-  Calendar,
-  Sparkles,
   User,
-  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +15,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useMockData } from '@/hooks/useMockData';
+import type { LeadSource } from '@/types/enums';
 
 export const LeadsPage: React.FC = () => {
   const { leads, addLead } = useMockData();
@@ -81,7 +77,7 @@ export const LeadsPage: React.FC = () => {
   const handleCreateLead = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateLeadForm()) return;
-    addLead(newLead as any);
+    addLead({ ...newLead, source: newLead.source as LeadSource });
     setIsModalOpen(false);
     setNewLead({ name: '', phone: '', email: '', source: 'ai_chat', notes: '' });
     setFormErrors({});

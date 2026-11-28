@@ -41,7 +41,7 @@ export interface ClinicInsert extends Omit<Clinic, 'id' | 'created_at' | 'update
   id?: string;
 }
 
-export interface ClinicUpdate extends Partial<ClinicInsert> {}
+export type ClinicUpdate = Partial<ClinicInsert>;
 
 // ---- Clinic Branch -----------------------------------------
 
@@ -60,7 +60,7 @@ export interface ClinicBranchInsert extends Omit<ClinicBranch, 'id' | 'created_a
   id?: string;
 }
 
-export interface ClinicBranchUpdate extends Partial<ClinicBranchInsert> {}
+export type ClinicBranchUpdate = Partial<ClinicBranchInsert>;
 
 // ---- Clinic Staff ------------------------------------------
 
@@ -81,7 +81,7 @@ export interface ClinicStaffInsert extends Omit<ClinicStaff, 'id' | 'created_at'
   id?: string;
 }
 
-export interface ClinicStaffUpdate extends Partial<ClinicStaffInsert> {}
+export type ClinicStaffUpdate = Partial<ClinicStaffInsert>;
 
 // ---- Clinic FAQ --------------------------------------------
 
@@ -101,7 +101,7 @@ export interface ClinicFaqInsert extends Omit<ClinicFaq, 'id' | 'created_at' | '
   id?: string;
 }
 
-export interface ClinicFaqUpdate extends Partial<ClinicFaqInsert> {}
+export type ClinicFaqUpdate = Partial<ClinicFaqInsert>;
 
 // ---- Lead --------------------------------------------------
 
@@ -123,7 +123,7 @@ export interface LeadInsert extends Omit<Lead, 'id' | 'created_at' | 'updated_at
   id?: string;
 }
 
-export interface LeadUpdate extends Partial<LeadInsert> {}
+export type LeadUpdate = Partial<LeadInsert>;
 
 // ---- Lead Activity -----------------------------------------
 
@@ -161,7 +161,7 @@ export interface AppointmentInsert extends Omit<Appointment, 'id' | 'created_at'
   id?: string;
 }
 
-export interface AppointmentUpdate extends Partial<AppointmentInsert> {}
+export type AppointmentUpdate = Partial<AppointmentInsert>;
 
 // ---- Appointment Slot --------------------------------------
 
@@ -181,7 +181,7 @@ export interface AppointmentSlotInsert extends Omit<AppointmentSlot, 'id' | 'cre
   id?: string;
 }
 
-export interface AppointmentSlotUpdate extends Partial<AppointmentSlotInsert> {}
+export type AppointmentSlotUpdate = Partial<AppointmentSlotInsert>;
 
 // ---- Conversation ------------------------------------------
 
@@ -200,7 +200,7 @@ export interface ConversationInsert extends Omit<Conversation, 'id' | 'started_a
   started_at?: string;
 }
 
-export interface ConversationUpdate extends Partial<ConversationInsert> {}
+export type ConversationUpdate = Partial<ConversationInsert>;
 
 // ---- Message -----------------------------------------------
 
@@ -237,7 +237,7 @@ export interface FollowUpRuleInsert extends Omit<FollowUpRule, 'id' | 'created_a
   id?: string;
 }
 
-export interface FollowUpRuleUpdate extends Partial<FollowUpRuleInsert> {}
+export type FollowUpRuleUpdate = Partial<FollowUpRuleInsert>;
 
 // ---- Follow-up Task ----------------------------------------
 
@@ -258,7 +258,7 @@ export interface FollowUpTaskInsert extends Omit<FollowUpTask, 'id' | 'created_a
   id?: string;
 }
 
-export interface FollowUpTaskUpdate extends Partial<FollowUpTaskInsert> {}
+export type FollowUpTaskUpdate = Partial<FollowUpTaskInsert>;
 
 // ---- Review Request ----------------------------------------
 
@@ -278,7 +278,7 @@ export interface ReviewRequestInsert extends Omit<ReviewRequest, 'id' | 'created
   id?: string;
 }
 
-export interface ReviewRequestUpdate extends Partial<ReviewRequestInsert> {}
+export type ReviewRequestUpdate = Partial<ReviewRequestInsert>;
 
 // ---- Prospect ----------------------------------------------
 
@@ -303,7 +303,7 @@ export interface ProspectInsert extends Omit<Prospect, 'id' | 'created_at'> {
   id?: string;
 }
 
-export interface ProspectUpdate extends Partial<ProspectInsert> {}
+export type ProspectUpdate = Partial<ProspectInsert>;
 
 // ---- Prospect Activity -------------------------------------
 
@@ -341,7 +341,7 @@ export interface CustomerInsert extends Omit<Customer, 'id' | 'created_at' | 'up
   id?: string;
 }
 
-export interface CustomerUpdate extends Partial<CustomerInsert> {}
+export type CustomerUpdate = Partial<CustomerInsert>;
 
 // ---- Finance Record ----------------------------------------
 
@@ -359,7 +359,7 @@ export interface FinanceRecordInsert extends Omit<FinanceRecord, 'id' | 'created
   id?: string;
 }
 
-export interface FinanceRecordUpdate extends Partial<FinanceRecordInsert> {}
+export type FinanceRecordUpdate = Partial<FinanceRecordInsert>;
 
 // ---- Audit Log ---------------------------------------------
 

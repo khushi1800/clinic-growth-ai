@@ -11,11 +11,11 @@ export interface SendResult {
   error?: string;
   mock: boolean;
   deliveryStatus: 'sent' | 'delivered' | 'read' | 'queued' | 'failed';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MessageChannel {
-  sendMessage(to: string, message: string, metadata?: Record<string, any>): Promise<SendResult>;
+  sendMessage(to: string, message: string, metadata?: Record<string, unknown>): Promise<SendResult>;
   getStatus(): 'connected' | 'mock';
   getChannelType(): 'whatsapp' | 'email' | 'sms';
 }
@@ -43,7 +43,7 @@ export function clearChannelAuditLogs(): void {
  * Simulates WhatsApp Business API / Cloud API messaging for Indian mobile numbers
  */
 export class MockWhatsAppChannel implements MessageChannel {
-  private channelType: 'whatsapp' = 'whatsapp';
+  private channelType = 'whatsapp' as const;
 
   public getChannelType(): 'whatsapp' {
     return this.channelType;
@@ -56,14 +56,14 @@ export class MockWhatsAppChannel implements MessageChannel {
   public async sendMessage(
     to: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<SendResult> {
     const cleanTo = to.trim();
     const messageId = `wa_mock_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const timestamp = new Date().toISOString();
 
     // Indian mobile phone number sanity check (10 digits, optional +91 prefix)
-    const isValidPhone = /(?:\+91[\-\s]?)?[6-9]\d{9}/.test(cleanTo);
+    const isValidPhone = /(?:\+91[-\s]?)?[6-9]\d{9}/.test(cleanTo);
 
     if (!isValidPhone && !cleanTo.includes('@')) {
       const failedResult: SendResult = {
@@ -112,7 +112,7 @@ export class MockWhatsAppChannel implements MessageChannel {
  * Simulates transactional email dispatch (e.g. via SendGrid / Resend)
  */
 export class MockEmailChannel implements MessageChannel {
-  private channelType: 'email' = 'email';
+  private channelType = 'email' as const;
 
   public getChannelType(): 'email' {
     return this.channelType;
@@ -125,7 +125,7 @@ export class MockEmailChannel implements MessageChannel {
   public async sendMessage(
     to: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<SendResult> {
     const cleanTo = to.trim();
     const messageId = `email_mock_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -180,7 +180,7 @@ export class MockEmailChannel implements MessageChannel {
  * Simulates Indian TRAI/DLT compliant SMS gateway (e.g. Gupshup, Textlocal, Msg91)
  */
 export class MockSMSChannel implements MessageChannel {
-  private channelType: 'sms' = 'sms';
+  private channelType = 'sms' as const;
 
   public getChannelType(): 'sms' {
     return this.channelType;
@@ -193,7 +193,7 @@ export class MockSMSChannel implements MessageChannel {
   public async sendMessage(
     to: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<SendResult> {
     const cleanTo = to.trim();
     const messageId = `sms_mock_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;

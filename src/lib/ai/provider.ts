@@ -20,8 +20,8 @@ export class GoogleAIProvider implements AIProvider {
   constructor(apiKey?: string, defaultModel = 'gemini-1.5-flash') {
     // Read from constructor argument or Vite client environment variable safely
     const envKey =
-      typeof import.meta !== 'undefined' && (import.meta as any).env
-        ? ((import.meta as any).env.VITE_GEMINI_API_KEY as string | undefined)
+      typeof import.meta !== 'undefined' && import.meta.env
+        ? (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)
         : undefined;
 
     this.apiKey = apiKey || envKey || '';
@@ -61,22 +61,32 @@ export class GoogleAIProvider implements AIProvider {
 
     const contents = this.formatContents(messages);
 
-    const payload: Record<string, any> = {
+    const generationConfig: {
+      temperature: number;
+      maxOutputTokens: number;
+      stopSequences?: string[];
+    } = {
+      temperature: options?.temperature ?? 0.3,
+      maxOutputTokens: options?.maxTokens ?? 1024,
+    };
+
+    if (options?.stopSequences && options.stopSequences.length > 0) {
+      generationConfig.stopSequences = options.stopSequences;
+    }
+
+    const payload: {
+      contents: ReturnType<GoogleAIProvider['formatContents']>;
+      generationConfig: typeof generationConfig;
+      system_instruction?: { parts: Array<{ text: string }> };
+    } = {
       contents,
-      generationConfig: {
-        temperature: options?.temperature ?? 0.3,
-        maxOutputTokens: options?.maxTokens ?? 1024,
-      },
+      generationConfig,
     };
 
     if (systemPrompt && systemPrompt.trim().length > 0) {
       payload.system_instruction = {
         parts: [{ text: systemPrompt }],
       };
-    }
-
-    if (options?.stopSequences && options.stopSequences.length > 0) {
-      payload.generationConfig.stopSequences = options.stopSequences;
     }
 
     const response = await fetch(url, {
@@ -128,7 +138,11 @@ export class GoogleAIProvider implements AIProvider {
 
     const contents = this.formatContents(messages);
 
-    const payload: Record<string, any> = {
+    const payload: {
+      contents: ReturnType<GoogleAIProvider['formatContents']>;
+      generationConfig: { temperature: number; maxOutputTokens: number };
+      system_instruction?: { parts: Array<{ text: string }> };
+    } = {
       contents,
       generationConfig: {
         temperature: options?.temperature ?? 0.3,
@@ -212,8 +226,8 @@ export function getAIProvider(options?: ProviderFactoryOptions): AIProvider {
   const preferredType = options?.type ?? 'auto';
   const apiKey =
     options?.apiKey ||
-    (typeof import.meta !== 'undefined' && (import.meta as any).env
-      ? ((import.meta as any).env.VITE_GEMINI_API_KEY as string | undefined)
+    (typeof import.meta !== 'undefined' && import.meta.env
+      ? (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)
       : undefined);
 
   if (preferredType === 'google' || (preferredType === 'auto' && apiKey && apiKey.trim().length > 0)) {

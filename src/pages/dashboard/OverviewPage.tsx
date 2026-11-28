@@ -4,7 +4,6 @@ import {
   Users,
   CalendarCheck,
   TrendingUp,
-  MessageSquare,
   Bot,
   Plus,
   ArrowRight,
@@ -23,7 +22,6 @@ export const OverviewPage: React.FC = () => {
   const { leads, appointments, conversations, clinic } = useMockData();
 
   const newLeadsToday = leads.filter(l => l.status === 'new').length;
-  const appointmentsToday = appointments.filter(a => a.status === 'confirmed').length;
 
   return (
     <div className="space-y-6">

@@ -5,7 +5,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { FollowupAutomationService, getDefaultFollowupRules, globalOptOutRegistry } from '../../src/lib/automation/followup.js'
-import { clearChannelAuditLogs, getChannelAuditLogs } from '../../src/lib/automation/channels.js'
+import { clearChannelAuditLogs } from '../../src/lib/automation/channels.js'
 import type { ClinicContext, FollowupRule, LeadData } from '../../src/lib/ai/types.js'
 
 const testClinicContext: ClinicContext = {

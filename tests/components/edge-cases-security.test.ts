@@ -5,7 +5,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { handleMessage, parseActionData } from '../../src/lib/ai/receptionist.js'
-import { MockAIProvider, DEFAULT_MOCK_CLINIC_CONTEXT, extractPhone, extractName } from '../../src/lib/ai/mock-provider.js'
+import { extractPhone, extractName } from '../../src/lib/ai/mock-provider.js'
 import type { ClinicContext } from '../../src/lib/ai/types.js'
 
 const mockClinicContext: ClinicContext = {

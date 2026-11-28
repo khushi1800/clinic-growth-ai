@@ -5,7 +5,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { MockAIProvider, DEFAULT_MOCK_CLINIC_CONTEXT } from '../../src/lib/ai/mock-provider.js'
-import type { ChatMessage, ClinicContext } from '../../src/lib/ai/types.js'
+import type { ChatMessage } from '../../src/lib/ai/types.js'
 
 const provider = new MockAIProvider({ simulatedDelayMs: 0, clinicContext: DEFAULT_MOCK_CLINIC_CONTEXT })
 

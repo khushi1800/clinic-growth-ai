@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Users,
-  Search,
-  Filter,
-  Phone,
-  Mail,
   MapPin,
-  ExternalLink,
   Plus,
-  Sparkles,
-  Calendar,
-  CheckCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
@@ -42,7 +32,7 @@ export const ProspectsPage: React.FC = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: unknown) => {
     setNewProspect(prev => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
       setFormErrors(prev => {

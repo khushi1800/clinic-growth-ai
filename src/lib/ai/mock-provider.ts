@@ -146,9 +146,9 @@ export const DEFAULT_MOCK_CLINIC_CONTEXT: ClinicContext = {
  */
 export function extractPhone(text: string): string | null {
   // Matches +91 9876543210, +91-9876543210, 9876543210, 09876543210
-  const match = text.match(/(?:\+91[\-\s]?)?[6-9]\d{4}[\-\s]?\d{5}/);
+  const match = text.match(/(?:\+91[-\s]?)?[6-9]\d{4}[-\s]?\d{5}/);
   if (match) {
-    return match[0].replace(/[\-\s]/g, '');
+    return match[0].replace(/[-\s]/g, '');
   }
   return null;
 }
@@ -208,7 +208,7 @@ export function extractName(text: string): string | null {
     /(?:call me|patient is|patient name is)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
     /(?:i am|this is)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
     // Name before phone number, e.g. "Khushbu Joshi, 8511125090" or "Khushbu Joshi - 9876543210" or "Rahul Sharma 9876543210"
-    /^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*[,:\-\s]\s*(?:\+91[\-\s]?)?[6-9]\d{9}/i,
+    /^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*[-,:\s]\s*(?:\+91[-\s]?)?[6-9]\d{9}/i,
     // Just a clean 1-to-2 word human name provided on its own line
     /^([A-Za-z]{2,20}(?:\s+[A-Za-z]{2,20}))$/i,
   ];
@@ -518,12 +518,6 @@ export class MockAIProvider implements AIProvider {
       prevQ.includes('name') ||
       prevQ.includes('phone') ||
       prevQ.includes('contact number');
-    const isAnsweringDateTimeQuestion =
-      prevQ.includes('time') ||
-      prevQ.includes('date') ||
-      prevQ.includes('morning') ||
-      prevQ.includes('evening') ||
-      prevQ.includes('slot');
 
     // If user asked an independent question, let the independent handlers (pricing/hours/doctors) answer it first!
     if (!isExplicitIndependentQuestion) {

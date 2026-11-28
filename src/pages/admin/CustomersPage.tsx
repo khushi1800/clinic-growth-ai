@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import {
-  ShieldCheck,
-  Building,
-  Calendar,
-  Sparkles,
-  ArrowUpRight,
   Search,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { useMockData } from '@/hooks/useMockData';
 
