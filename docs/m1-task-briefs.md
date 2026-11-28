@@ -36,7 +36,7 @@ npm run build
 2. `.env.example`: **public variables only** — `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_DEMO_MODE` (default `false`), with one-line comments. No `service_role`, no Gemini/AI key, no `VITE_GEMINI_API_KEY`.
 3. `provider.ts`: in a production build (`import.meta.env.PROD`) the browser must never read `VITE_GEMINI_API_KEY` or call Google directly; `getAIProvider()` returns the mock provider. Keep the `AIProvider` interface and existing tests passing. (The real server-side path is Milestone 3.)
 4. `client.ts` (**Founder must first set `VITE_DEMO_MODE=true` in the Vercel Production environment, or the live demo site will fail to start**): keep the mock fallback URL/key for demo/tests only; in a production build with `VITE_DEMO_MODE !== 'true'` and missing Supabase vars, throw a clear startup error instead of silently using the mock URL.
-5. `scripts/check-bundle-secrets.mjs <dir>`: scans files in `dist/` and exits non-zero if it finds `service_role`, a JWT whose payload has `"role":"service_role"`, or an `AIza[0-9A-Za-z_-]{35}` key. Print which file and pattern. Add `npm run check:secrets` (runs the script on `dist`).
+5. `scripts/check-bundle-secrets.mjs <dir>`: scans files in `dist/` and exits non-zero if it finds `service_role`, a JWT whose payload has `"role":"service_role"`, an `AIza[0-9A-Za-z_-]{35}` key, or a Supabase secret key matching `sb_secret_[A-Za-z0-9_-]+`. Print which file and pattern. Add `npm run check:secrets` (runs the script on `dist`).
 **Verify:**
 ```
 git check-ignore -v .env .env.local .env.production      # all three ignored
